@@ -47,6 +47,12 @@ jobs:
           else
             cp index.html styles.css app.js data.js _site/
           fi
+          # Use versioned asset URLs so Safari reloads previously missing files
+          sed -i \
+            -e 's|href="./styles.css"|href="./styles.css?v=20261013fix1"|g' \
+            -e 's|src="./data.js"|src="./data.js?v=20261013fix1"|g' \
+            -e 's|src="./app.js"|src="./app.js?v=20261013fix1"|g' \
+            _site/index.html
           test -s _site/index.html
           test -s _site/styles.css
           test -s _site/data.js
