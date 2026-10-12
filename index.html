@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.3</title>
+  <title>SK Magic 제품정보 V6.5</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -43,7 +43,7 @@
 
   <div class="section-head">
     <div><h2 id="listTitle">전체 제품</h2><span id="count">0개</span></div>
-    <small>사진 클릭 → SK매직 공식 상세페이지</small>
+    <small>사진 클릭 → 제품사진 확대 / 버튼 클릭 → 공식 상세</small>
   </div>
 
   <div id="productGrid" class="grid"></div>
@@ -72,7 +72,9 @@
         <div class="badges"><i id="selCategory"></i><i id="selSubtype"></i></div>
         <h2 id="selTitle"></h2>
         <code id="selModel"></code>
-        <button id="officialBtn" class="official" type="button">SK매직 공식 상세페이지 ↗</button>
+        <div class="sheet-action-row">
+          <button id="officialBtn" class="official" type="button">SK매직 공식 상세페이지 ↗</button>
+        </div>
       </div>
     </div>
     <button id="closeSheet" class="close">×</button>
@@ -80,32 +82,40 @@
 
   <div id="quickFeatures" class="feature-row"></div>
 
-  <section class="block">
-    <div class="block-title"><b>계약조건 선택</b><small>선택한 기준월의 e-book 가격 스냅샷</small></div>
+  <section class="block contract-block">
+    <div class="block-title"><b>계약조건 선택</b><small>선택한 기준월의 e-book/공식몰 가격 기준</small></div>
     <div id="dataWarning" class="data-warning hidden"></div>
-    <div id="selectors" class="selectors"></div>
-    <div id="specialPricing" class="special-pricing hidden"></div>
+    <div class="contract-layout">
+      <div class="contract-main">
+        <div id="selectors" class="selectors"></div>
+        <div id="specialPricing" class="special-pricing hidden"></div>
+      </div>
+      <aside class="official-price">
+        <div class="official-side-head">
+          <span id="officialPriceLabel">선택한 공식 월 구독료</span>
+          <small id="officialPriceSource">SK매직몰 기준 구독료</small>
+        </div>
+        <strong id="officialPrice">-</strong>
+        <p id="officialSummary"></p>
+        <div id="ebookContractMeta" class="ebook-meta"></div>
+      </aside>
+    </div>
   </section>
 
-  <div class="official-price">
-    <div><span>선택한 공식 월 구독료</span><strong id="officialPrice">-</strong></div>
-    <p id="officialSummary"></p>
-  </div>
+  <section id="promoBlock" class="block hidden">
+    <div class="block-title"><b id="promoBlockTitle">🔥 프로모션</b><small>수수료 계산 적용금액은 반값할인 전 기준가로 계산됩니다.</small></div>
+    <div id="customerTypes" class="customer-types"></div>
+    <div id="promoList" class="promo-list"></div>
+  </section>
 
   <div id="membershipBlock" class="membership-block hidden">
     <b>멤버십</b><div id="membershipList"></div>
   </div>
 
-  <section id="promoBlock" class="block hidden">
-    <div class="block-title"><b id="promoBlockTitle">🔥 프로모션</b><small>공식 계약가와 프로모션 기준가는 별도 정책값입니다.</small></div>
-    <div id="customerTypes" class="customer-types"></div>
-    <div id="promoList" class="promo-list"></div>
-  </section>
-
   <div class="apply-price">
     <span>수수료 계산 적용 월요금</span>
     <strong id="applyPrice">-</strong>
-    <small id="applyMeta">공식 계약가 기준</small>
+    <small id="applyMeta">e-book 계약가 기준</small>
   </div>
 
   <details class="formula">
@@ -121,6 +131,22 @@
   <div class="commission"><span>예상 수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
   <button id="addBtn" class="cta" type="button">＋ 계산내역에 추가</button>
 </section>
+
+<div id="photoViewer" class="photo-viewer hidden">
+  <div class="photo-viewer-backdrop" id="photoViewerCloseBg"></div>
+  <div class="photo-viewer-dialog">
+    <button id="photoViewerClose" class="photo-viewer-close" type="button">×</button>
+    <div class="photo-viewer-main"><img id="photoViewerImage" alt="제품 사진"></div>
+    <div id="photoViewerThumbs" class="photo-viewer-thumbs"></div>
+    <div class="photo-viewer-foot">
+      <div>
+        <b id="photoViewerTitle"></b>
+        <small id="photoViewerModel"></small>
+      </div>
+      <button id="photoViewerOfficial" class="official" type="button">공식 상세페이지 ↗</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast" class="toast"></div>
 <script src="./data.js"></script>
