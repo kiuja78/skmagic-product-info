@@ -30,6 +30,8 @@ jobs:
           mkdir -p _site
           if [ -f site.zip ]; then
             unzip -q site.zip -d _site
+          elif [ -f .github/workflows/site.zip ]; then
+            unzip -q .github/workflows/site.zip -d _site
           else
             echo "site.zip is missing"
             exit 1
