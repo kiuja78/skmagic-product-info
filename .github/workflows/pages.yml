@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,16 +16,18 @@ concurrency:
 
 jobs:
   deploy:
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Prepare site
+        shell: bash
         run: |
+          set -euo pipefail
           rm -rf _site
           mkdir -p _site
           if [ -f .github/site_parts/part01.txt ] && [ -f .github/site_parts/part06.txt ]; then
@@ -38,15 +40,33 @@ jobs:
               .github/site_parts/part05b.txt \
               .github/site_parts/part06.txt \
               | tr -d '\r\n' | base64 -d > /tmp/site.zip
-            unzip -t /tmp/site.zip
+            unzip -tq /tmp/site.zip
             unzip -q /tmp/site.zip -d _site
           elif [ -f site.zip ]; then
             unzip -q site.zip -d _site
-          elif [ -f .github/workflows/site.zip ]; then
-            unzip -q .github/workflows/site.zip -d _site
           else
-            echo "site archive is missing"
-            exit 1
+            cp index.html styles.css app.js data.js _site/
+          fi
+          test -s _site/index.html
+          test -s _site/styles.css
+          test -s _site/data.js
+          test -s _site/app.js
+          grep -q 'SK_MONTH_ARCHIVE' _site/data.js
+          echo "Verified app assets:"
+          ls -lah _site/
+
+      - name: Sync assets to site root for Pages branch builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp _site/index.html _site/styles.css _site/app.js _site/data.js ./
+          touch .nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html styles.css app.js data.js .nojekyll
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish complete V6.5 website assets [skip ci]"
+            git push origin HEAD:main
           fi
 
       - name: Configure Pages
