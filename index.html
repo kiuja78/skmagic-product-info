@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7fbff">
+  <title>SK Magic 제품정보 V6.3</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="sticky-tools">
+    <header class="top">
+      <div class="brand">
+        <img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/SK%20magic%20logo%20English.svg" alt="SK magic">
+        <div><h1>SK Magic 제품정보</h1><p>제품 · 계약가격 · 프로모션 · 수수료</p></div>
+      </div>
+      <label class="month-card" title="기준월 변경 · 월별 가격 조회">
+        <span class="month-icon" aria-hidden="true">▦</span>
+        <span class="month-copy">
+          <small>기준월 · 월별 가격 조회</small>
+          <strong id="monthCurrent">2026.10</strong>
+        </span>
+        <span class="month-arrow" aria-hidden="true">⌄</span>
+        <select id="monthSelect" class="month-native" aria-label="기준월 선택"></select>
+      </label>
+    </header>
+
+    <label class="search">
+      <span>⌕</span>
+      <input id="searchInput" type="search" placeholder="제품명 또는 모델명 검색">
+      <button id="clearSearch" type="button">×</button>
+    </label>
+
+    <div id="categoryChips" class="chips"></div>
+
+    <div id="subFilter" class="sub-filter hidden">
+      <div class="sub-head"><b id="subTitle">세부구분</b><small id="subHelp"></small></div>
+      <div id="subChips" class="sub-chips"></div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div><h2 id="listTitle">전체 제품</h2><span id="count">0개</span></div>
+    <small>사진 클릭 → SK매직 공식 상세페이지</small>
+  </div>
+
+  <div id="productGrid" class="grid"></div>
+
+  <section class="history">
+    <div class="history-head"><div><small>MY CALC</small><h2>계산내역</h2></div><button id="clearCart">전체삭제</button></div>
+    <div id="cartList"></div>
+    <div class="total"><span>총 예상 수수료</span><strong id="totalCommission">0원</strong></div>
+  </section>
+
+  <footer class="developer-footer">
+    <span>SK Magic Sales Tool</span>
+    <strong>개발자 : 김건일 팀장</strong>
+  </footer>
+</div>
+
+<div id="backdrop" class="backdrop hidden"></div>
+<section id="sheet" class="sheet hidden">
+  <div class="handle"></div>
+  <div class="sheet-head">
+    <div class="selected">
+      <button id="officialImageBtn" class="thumb" type="button">
+        <img id="selImage" alt=""><span>↗</span>
+      </button>
+      <div>
+        <div class="badges"><i id="selCategory"></i><i id="selSubtype"></i></div>
+        <h2 id="selTitle"></h2>
+        <code id="selModel"></code>
+        <button id="officialBtn" class="official" type="button">SK매직 공식 상세페이지 ↗</button>
+      </div>
+    </div>
+    <button id="closeSheet" class="close">×</button>
+  </div>
+
+  <div id="quickFeatures" class="feature-row"></div>
+
+  <section class="block">
+    <div class="block-title"><b>계약조건 선택</b><small>선택한 기준월의 e-book 가격 스냅샷</small></div>
+    <div id="dataWarning" class="data-warning hidden"></div>
+    <div id="selectors" class="selectors"></div>
+    <div id="specialPricing" class="special-pricing hidden"></div>
+  </section>
+
+  <div class="official-price">
+    <div><span>선택한 공식 월 구독료</span><strong id="officialPrice">-</strong></div>
+    <p id="officialSummary"></p>
+  </div>
+
+  <div id="membershipBlock" class="membership-block hidden">
+    <b>멤버십</b><div id="membershipList"></div>
+  </div>
+
+  <section id="promoBlock" class="block hidden">
+    <div class="block-title"><b id="promoBlockTitle">🔥 프로모션</b><small>공식 계약가와 프로모션 기준가는 별도 정책값입니다.</small></div>
+    <div id="customerTypes" class="customer-types"></div>
+    <div id="promoList" class="promo-list"></div>
+  </section>
+
+  <div class="apply-price">
+    <span>수수료 계산 적용 월요금</span>
+    <strong id="applyPrice">-</strong>
+    <small id="applyMeta">공식 계약가 기준</small>
+  </div>
+
+  <details class="formula">
+    <summary><b>수수료 계산식</b><span>현재 정책값 직접 입력</span></summary>
+    <div class="fields">
+      <label>계약배수<input id="contractMultiplier" type="number" step="0.01" placeholder="예: 5.2"></label>
+      <label>이익배수<input id="profitMultiplier" type="number" step="0.01" placeholder="예: 0.8"></label>
+      <label>지급률<div class="suffix"><input id="payoutRate" type="number" step="0.1" placeholder="100"><span>%</span></div></label>
+      <label>추가수수료<div class="suffix"><input id="extraCommission" type="number" step="1000" placeholder="0"><span>원</span></div></label>
+    </div>
+  </details>
+
+  <div class="commission"><span>예상 수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
+  <button id="addBtn" class="cta" type="button">＋ 계산내역에 추가</button>
+</section>
+
+<div id="toast" class="toast"></div>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
