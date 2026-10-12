@@ -28,12 +28,15 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site
-          if [ -f site.zip ]; then
+          if compgen -G ".github/site_parts/part*.txt" > /dev/null; then
+            cat .github/site_parts/part*.txt | tr -d '\r\n' | base64 -d > /tmp/site.zip
+            unzip -q /tmp/site.zip -d _site
+          elif [ -f site.zip ]; then
             unzip -q site.zip -d _site
           elif [ -f .github/workflows/site.zip ]; then
             unzip -q .github/workflows/site.zip -d _site
           else
-            echo "site.zip is missing"
+            echo "site archive is missing"
             exit 1
           fi
 
