@@ -2,7 +2,10 @@ name: Deploy SK Magic Product Info
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
+    paths:
+      - 'site.zip'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -11,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -24,54 +27,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare site
+      - name: Build and validate site
         shell: bash
         run: |
           set -euo pipefail
+          test -s site.zip || { echo 'Root-level site.zip is missing'; exit 1; }
           rm -rf _site
-          mkdir -p _site
-          if [ -f .github/site_parts/part01.txt ] && [ -f .github/site_parts/part06.txt ]; then
-            cat \
-              .github/site_parts/part01.txt \
-              .github/site_parts/part02.txt \
-              .github/site_parts/part03.txt \
-              .github/site_parts/part04.txt \
-              .github/site_parts/part05a.txt \
-              .github/site_parts/part05b.txt \
-              .github/site_parts/part06.txt \
-              | tr -d '\r\n' | base64 -d > /tmp/site.zip
-            unzip -tq /tmp/site.zip
-            unzip -q /tmp/site.zip -d _site
-          elif [ -f site.zip ]; then
-            unzip -q site.zip -d _site
-          else
-            cp index.html styles.css app.js data.js _site/
-          fi
-          # Use versioned asset URLs so Safari reloads previously missing files
-          sed -i \
-            -e 's|href="./styles.css"|href="./styles.css?v=20261013fix1"|g' \
-            -e 's|src="./data.js"|src="./data.js?v=20261013fix1"|g' \
-            -e 's|src="./app.js"|src="./app.js?v=20261013fix1"|g' \
-            _site/index.html
+          mkdir _site
+          unzip -q site.zip -d _site
           test -s _site/index.html
+          test -s _site/app.js
           test -s _site/styles.css
           test -s _site/data.js
-          test -s _site/app.js
           grep -q 'SK_MONTH_ARCHIVE' _site/data.js
-          echo "Verified app assets:"
-          ls -lah _site/
+          grep -q '6.6' _site/index.html
+          echo 'Validated V6.6 deployment bundle.'
 
-      - name: Sync assets to site root for Pages branch builds
+      - name: Keep GitHub Pages branch build consistent
         shell: bash
         run: |
           set -euo pipefail
           cp _site/index.html _site/styles.css _site/app.js _site/data.js ./
+          if [ -f _site/skmagic_logo.png ]; then cp _site/skmagic_logo.png ./; fi
           touch .nojekyll
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html styles.css app.js data.js .nojekyll
+          if [ -f skmagic_logo.png ]; then git add skmagic_logo.png; fi
           if ! git diff --cached --quiet; then
-            git commit -m "Publish complete V6.5 website assets [skip ci]"
+            git commit -m 'Publish V6.6 website assets [skip ci]'
             git push origin HEAD:main
           fi
 
@@ -80,11 +64,11 @@ jobs:
         with:
           enablement: true
 
-      - name: Upload Pages artifact
+      - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
