@@ -225,3 +225,10 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 .ebook-meta{font-weight:750}
 .photo-viewer-thumbs:empty{display:none}
 .verification-note{font-size:9px;color:#587089}
+
+/* V6.6 eligibility messages + readability */
+.no-promo{font-size:12px;line-height:1.85;padding:14px;background:#f7faff;border:1px solid #dbe7f3;border-radius:11px;color:#4e6079}
+.no-promo b{color:#263c59}
+.promo-card[aria-pressed="true"]{border-color:#ef7770;box-shadow:0 0 0 2px #ffb3ae inset;background:#fff8f7}
+.official-side-head small{line-height:1.5}
+@media(max-width:760px){.official-price strong{font-size:30px}.promo-card .condition{line-height:1.55}}
