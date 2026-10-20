@@ -268,3 +268,24 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 .estimate-parts small{font-size:10px;color:#7b8793}
 .estimate-parts b{margin-left:auto}
 @media(max-width:420px){.rate-customer-types{grid-template-columns:1fr}.rate-option strong{font-size:18px}}
+
+/* V6.8.1: 상단 로고 클릭으로 새로고침 */
+.brand-reload{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  border-radius:10px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.brand-reload img{display:block;}
+.brand-reload:focus-visible{
+  outline:2px solid #226fbd;
+  outline-offset:3px;
+}

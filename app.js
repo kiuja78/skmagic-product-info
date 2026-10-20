@@ -476,7 +476,7 @@ function syncCommissionDefaults(r){
   $('#contractMultiplier').value=contract??'';
   $('#profitMultiplier').value=profit.value;
   $('#payoutRate').value=payout===undefined?'':Math.round(payout*100);
-  $('#commissionPolicyNote').textContent=`${policy.policySource||'참고 정책'} · ${profit.reason} · 확정 지급액이 아닌 예상액`;
+  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${profit.reason} · 정산 전 예상액`;
 }
 function renderCommissionTypes(){
   const box=$('#commissionTypeOptions'), ratio=referencePolicy.rateByType||{};
@@ -529,6 +529,8 @@ function renderMonthSelect(){
   $('#monthCurrent').textContent=monthText();
   $('#monthSelect').onchange=e=>{ closeSheet(); loadMonth(e.target.value); $('#monthCurrent').textContent=monthText(); state.category='전체'; state.sub='전체'; state.search=''; $('#searchInput').value=''; $('#listTitle').textContent='전체 제품'; renderCats(); renderSub(); renderProducts(); toast(`${monthText()} 기준 가격으로 변경했습니다`); };
 }
+
+$('#brandReload').addEventListener('click', () => window.location.reload());
 
 loadMonth(state.month);
 renderMonthSelect();

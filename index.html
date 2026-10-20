@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.8</title>
-  <link rel="stylesheet" href="./styles.css?v=6.8">
+  <title>SK Magic 제품정보 V6.8.1</title>
+  <link rel="stylesheet" href="./styles.css?v=6.8.1">
 </head>
 <body>
 <div class="app">
@@ -13,7 +13,7 @@
   <div class="sticky-tools">
     <header class="top">
       <div class="brand">
-        <img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/SK%20magic%20logo%20English.svg" alt="SK magic">
+        <button type="button" id="brandReload" class="brand-reload" title="새로고침" aria-label="SK매직 제품정보 새로고침"><img src="https://commons.wikimedia.org/wiki/Special:Redirect/file/SK%20magic%20logo%20English.svg" alt="SK magic"></button>
         <div><h1>SK Magic 제품정보</h1><p>제품 · 계약가격 · 프로모션 · 수수료</p></div>
       </div>
       <label class="month-card" title="기준월 변경 · 월별 가격 조회">
@@ -51,11 +51,11 @@
   <section class="history">
     <div class="history-head"><div><small>MY CALC</small><h2>계산내역</h2></div><button id="clearCart">전체삭제</button></div>
     <div id="cartList"></div>
-    <div class="estimate-parts"><div>판매수수료 <b id="saleCommissionTotal">0원</b></div><div>장려수수료 <small id="incentiveRate"></small><b id="incentiveTotal">0원</b></div></div><div class="total"><span>총 예상 수수료 (판매+장려)</span><strong id="totalCommission">0원</strong></div><p class="policy-small">울산울주지국 MC 개편(안) 참고계산 · 확정 수수료 아님</p>
+    <div class="estimate-parts"><div>판매수수료 <b id="saleCommissionTotal">0원</b></div><div>장려수수료 <small id="incentiveRate"></small><b id="incentiveTotal">0원</b></div></div><div class="total"><span>총 예상 수수료 (판매+장려)</span><strong id="totalCommission">0원</strong></div><p class="policy-small">SK매직 지급정책 기준 · 실제 정산액은 계약 및 실적 조건에 따라 달라질 수 있습니다</p>
   </section>
 
   <footer class="developer-footer">
-    <span>SK Magic Sales Tool</span>
+    <span>SK Magic Sales Tool · V6.8.1</span>
     <strong>개발자 : 김건일 팀장</strong>
   </footer>
 </div>
@@ -137,7 +137,7 @@
     </div>
   </details>
 
-  <div class="commission"><span>참고 정책 예상 판매수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
+  <div class="commission"><span>SK매직 정책 기준 예상 판매수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
   <button id="addBtn" class="cta" type="button">＋ 계산내역에 추가</button>
 </section>
 
@@ -158,7 +158,7 @@
 </div>
 
 <div id="toast" class="toast"></div>
-<script src="./data.js?v=6.8"></script>
-<script src="./app.js?v=6.8"></script>
+<script src="./data.js?v=6.8.1"></script>
+<script src="./app.js?v=6.8.1"></script>
 </body>
 </html>
