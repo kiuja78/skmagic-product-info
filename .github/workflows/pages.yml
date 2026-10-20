@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'site.zip'
+      - 'SKMagic_V6_8_site.zip'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -14,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: skmagic-pages
   cancel-in-progress: true
 
 jobs:
@@ -27,35 +28,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and validate site
+      - name: Select and verify V6.8 archive
         shell: bash
         run: |
           set -euo pipefail
-          test -s site.zip || { echo 'Root-level site.zip is missing'; exit 1; }
           rm -rf _site
-          mkdir _site
-          unzip -q site.zip -d _site
-          test -s _site/index.html
-          test -s _site/app.js
-          test -s _site/styles.css
-          test -s _site/data.js
-          grep -q 'SK_MONTH_ARCHIVE' _site/data.js
-          grep -q '6.6' _site/index.html
-          echo 'Validated V6.6 deployment bundle.'
+          for archive in site.zip SKMagic_V6_8_site.zip; do
+            [ -s "$archive" ] || continue
+            unzip -tq "$archive" || continue
+            mkdir -p _site
+            unzip -q "$archive" -d _site
+            if [ -s _site/index.html ] \
+              && [ -s _site/styles.css ] \
+              && [ -s _site/app.js ] \
+              && [ -s _site/data.js ] \
+              && [ -s _site/reference_rates.json ] \
+              && grep -q 'V6.8' _site/index.html \
+              && grep -q 'SK_MONTH_ARCHIVE' _site/data.js; then
+              echo "Selected valid V6.8 archive: $archive"
+              break
+            fi
+            rm -rf _site
+          done
+          test -s _site/index.html || {
+            echo 'ERROR: V6.8 site.zip is absent/invalid. Upload the correct V6.8 archive to the repository root.';
+            exit 1;
+          }
+          touch _site/.nojekyll
+          ls -lh _site/
 
-      - name: Keep GitHub Pages branch build consistent
+      - name: Sync extracted files to repository root
         shell: bash
         run: |
           set -euo pipefail
-          cp _site/index.html _site/styles.css _site/app.js _site/data.js ./
-          if [ -f _site/skmagic_logo.png ]; then cp _site/skmagic_logo.png ./; fi
+          cp _site/index.html _site/styles.css _site/app.js _site/data.js _site/reference_rates.json ./
           touch .nojekyll
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html styles.css app.js data.js .nojekyll
-          if [ -f skmagic_logo.png ]; then git add skmagic_logo.png; fi
+          git add index.html styles.css app.js data.js reference_rates.json .nojekyll
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish V6.6 website assets [skip ci]'
+            git commit -m 'Publish verified SK Magic V6.8 assets [skip ci]'
             git push origin HEAD:main
           fi
 
@@ -64,11 +76,11 @@ jobs:
         with:
           enablement: true
 
-      - name: Upload site
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy Pages
+      - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v4
