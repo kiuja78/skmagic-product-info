@@ -289,3 +289,65 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
   outline:2px solid #226fbd;
   outline-offset:3px;
 }
+
+
+/* V6.9 — 모바일 공간 효율 · 계약조건/프로모션/구독료 정돈 */
+.sheet{padding:10px 14px max(18px,env(safe-area-inset-bottom));}
+.sheet .block{margin-top:11px;padding:12px 13px;border-radius:16px;}
+.sheet .block-title{align-items:center;min-height:20px;}
+.sheet .block-title b{font-size:15px;letter-spacing:-.03em;}
+.sheet .selectors{margin-top:11px;gap:10px;display:flex;flex-direction:column;}
+.sheet .selector-group{min-width:0;}
+.sheet .selector-group label{font-size:11px;margin-bottom:6px;}
+.sheet .selector-care-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;align-items:start;}
+.sheet .selector-care-row .seg{gap:5px;flex-wrap:wrap;}
+.sheet .seg{gap:6px;}
+.sheet .seg button{padding:8px 11px;min-height:37px;font-size:12px;border-radius:10px;}
+.sheet .contract-layout{display:flex;flex-direction:column;gap:10px;margin-top:0;}
+.sheet .contract-main{padding:0 1px;}
+.sheet .official-price{min-height:0;margin:0;padding:11px 14px;border-radius:13px;gap:5px;}
+.sheet .official-price::before{display:none;}
+.sheet .official-side-head{display:block!important;}
+.sheet .official-side-head span{font-size:16px;font-weight:900;color:#243b50;letter-spacing:-.035em;}
+.sheet .official-price strong{align-self:flex-start;font-size:31px;font-weight:900;line-height:1.3;margin:0;letter-spacing:-.05em;}
+.sheet .base-price-strike{position:relative;display:inline-block;}
+.sheet .base-price-strike:not(:empty)::after{content:"";position:absolute;left:0;right:0;top:51%;height:2.5px;background:#e44545;transform:rotate(-.5deg);pointer-events:none;}
+.sheet .official-price p:empty,.sheet .ebook-meta:empty{display:none;}
+.sheet .ebook-meta{margin:0;padding:0;border:0;}
+.sheet .customer-types{margin-top:8px;gap:6px;}
+.sheet .customer-types button{padding:7px 10px;font-size:11px;}
+.sheet .promo-list{gap:7px;margin-top:8px;}
+.sheet .promo-card{padding:11px 12px;}
+.sheet .promo-card p{margin-top:5px;}
+.sheet .final-rate-block{background:#f1faf7;}
+.sheet .final-rate-block .block-title b{font-size:16px;color:#164d48;}
+/* tariff: show related customer types together, including iPhone widths */
+.sheet .rate-customer-types{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.sheet .rate-group{min-width:0;}
+.sheet .rate-group-title{font-size:10px;line-height:1.5;color:#60766f;font-weight:900;margin-bottom:5px;letter-spacing:.005em;}
+.sheet .rate-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.sheet .rate-group-primary .rate-group-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+.sheet .rate-group-single .rate-group-grid{grid-template-columns:minmax(0,1fr);}
+.sheet .rate-customer-types .rate-option{min-width:0;min-height:76px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:9px 8px;text-align:left;border-radius:10px;line-height:1.25;}
+.sheet .rate-option .rate-option-title{font-size:11px;color:#304e55;white-space:normal;word-break:keep-all;}
+.sheet .rate-option strong{font-size:clamp(13px,3.4vw,17px);letter-spacing:-.055em;color:#172a36;white-space:nowrap;}
+.sheet .rate-option small{font-size:9px;font-weight:700;color:#6e8190;grid-column:auto;}
+.sheet .rate-option.active{background:#e1f9ee;border-color:#42b99d;box-shadow:inset 0 0 0 1px #42b99d;}
+.sheet .rate-option.active strong{color:#07826c;}
+.sheet .final-price-display{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 12px;border-radius:11px;}
+.sheet .final-price-display span{font-size:11px;font-weight:900;color:#51736a;}
+.sheet .final-price-display strong{font-size:21px;line-height:1.3;}
+@media(max-width:420px){
+  .sheet .rate-customer-types{display:flex;}
+  .sheet .rate-group-primary .rate-group-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .sheet .rate-group-pair .rate-group-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .sheet .rate-customer-types .rate-option{padding:8px 6px;min-height:73px;}
+  .sheet .rate-option .rate-option-title{font-size:10px;}
+  .sheet .rate-option strong{font-size:clamp(12px,3.7vw,15px);}
+  .sheet .selector-care-row{gap:8px;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr);}
+  .sheet .seg button{padding:7px 9px;font-size:11px;min-height:35px;}
+}
+@media(max-width:340px){
+  .sheet .rate-group-primary .rate-group-grid{gap:4px;}
+  .sheet .rate-option strong{font-size:12px;}
+}

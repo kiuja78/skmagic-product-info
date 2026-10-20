@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.8.1</title>
-  <link rel="stylesheet" href="./styles.css?v=6.8.1">
+  <title>SK Magic 제품정보 V6.9</title>
+  <link rel="stylesheet" href="./styles.css?v=6.9">
 </head>
 <body>
 <div class="app">
@@ -55,7 +55,7 @@
   </section>
 
   <footer class="developer-footer">
-    <span>SK Magic Sales Tool · V6.8.1</span>
+    <span>SK Magic Sales Tool · V6.9</span>
     <strong>개발자 : 김건일 팀장</strong>
   </footer>
 </div>
@@ -83,7 +83,7 @@
   <div id="quickFeatures" class="feature-row"></div>
 
   <section class="block contract-block">
-    <div class="block-title"><b>계약조건 선택</b><small>선택한 관리방식·의무사용기간별 공식 e-book 요금</small></div>
+    <div class="block-title"><b>계약조건 선택</b></div>
     <div id="dataWarning" class="data-warning hidden"></div>
     <div class="contract-layout">
       <div class="contract-main">
@@ -93,26 +93,25 @@
       <aside class="official-price">
         <div class="official-side-head">
           <span id="officialPriceLabel">기본구독료 · SK매직몰</span>
-          <small id="officialPriceSource">관리방식별 대표 기준가</small>
+
         </div>
-        <strong id="officialPrice">-</strong>
+        <strong id="officialPrice" class="base-price-strike">-</strong>
         <p id="officialSummary"></p>
         <div id="ebookContractMeta" class="ebook-meta"></div>
       </aside>
     </div>
   </section>
 
-  <section id="finalRateBlock" class="block final-rate-block">
-    <div class="block-title"><b>10월 계약유형별 구독료 · 한눈에 비교</b><small id="finalRateStatus">참고 사이트 10월 요금표 기준</small></div>
-    <div id="finalCustomerTypes" class="rate-customer-types"></div>
-    <div class="final-price-display"><strong id="finalRatePrice">-</strong><p id="finalRateDetail"></p></div>
-    <div class="rate-provenance" id="finalPromoMatch"></div>
-  </section>
-
   <section id="promoBlock" class="block hidden">
-    <div class="block-title"><b id="promoBlockTitle">🔥 e-book 프로모션</b><small>e-book 등록 제품의 해당 계약조건에만 적용됩니다.</small></div>
+    <div class="block-title"><b id="promoBlockTitle">🔥 10월 프로모션</b></div>
     <div id="customerTypes" class="customer-types"></div>
     <div id="promoList" class="promo-list"></div>
+  </section>
+
+  <section id="finalRateBlock" class="block final-rate-block">
+    <div class="block-title"><b>구독료</b></div>
+    <div id="finalCustomerTypes" class="rate-customer-types"></div>
+    <div class="final-price-display"><span>선택 구독료</span><strong id="finalRatePrice">-</strong></div>
   </section>
 
   <div id="membershipBlock" class="membership-block hidden">
@@ -158,7 +157,7 @@
 </div>
 
 <div id="toast" class="toast"></div>
-<script src="./data.js?v=6.8.1"></script>
-<script src="./app.js?v=6.8.1"></script>
+<script src="./data.js?v=6.9"></script>
+<script src="./app.js?v=6.9"></script>
 </body>
 </html>

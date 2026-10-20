@@ -252,19 +252,35 @@ function mallBase(row){
   if(row.management==='셀프형')return Number(v.beforePriceSelf||v.beforePrice||0);
   return Number(v.beforePrice||0);
 }
+const tariffGroupSections=[
+  {title:'신규 · 크로스 · 패키지',css:'rate-group-primary',types:['신규','크로스','패키지']},
+  {title:'재구독',css:'rate-group-pair',types:['재구독','재구독패키지']},
+  {title:'우대',css:'rate-group-pair',types:['우대','우대패키지']},
+  {title:'타사보상',css:'rate-group-single',types:['타사보상']},
+  {title:'구독료',css:'rate-group-single',types:['기본최종']}
+];
 function renderFinalRates(row){
   const box=$('#finalRateBlock'), rate=chosenFinalRate(row);
   const types=eligibleRateTypes(rate);
   chooseRateCustomer(rate);
   box.classList.remove('hidden');
-  $('#finalCustomerTypes').innerHTML=types.length?types.map(t=>{
-    const amount=customerPrice(rate,t);
-    const effType=saleTypeForCustomer(t);
-    const ratio=(referencePolicy.rateByType||{})[effType];
-    const percent=ratio==null?'유형별 확인 필요':`${Math.round(ratio*100)}%`;
-    return `<button type="button" aria-pressed="${t===state.rateCustomer}" class="rate-option ${t===state.rateCustomer?'active':''}" data-rate-customer="${t}">
-      <span class="rate-option-title">${typeLabels[t]||t}</span><strong>${fmt(amount)}</strong><small>지급률 ${t==='기본최종'?'계약유형 선택':percent}</small></button>`;
-  }).join(''):'<div class="no-promo">이 조건의 확정 월 구독료가 없습니다. 다른 약정이나 관리방식을 선택하세요.</div>';
+  const groups=tariffGroupSections.map(g=>{
+    const visible=g.types.filter(t=>types.includes(t));
+    if(!visible.length)return '';
+    return `<div class="rate-group ${g.css}">
+      <div class="rate-group-title">${g.title}</div>
+      <div class="rate-group-grid">${visible.map(t=>{
+        const amount=customerPrice(rate,t);
+        const effType=saleTypeForCustomer(t);
+        const ratio=(referencePolicy.rateByType||{})[effType];
+        const percent=ratio==null?'':'지급 '+Math.round(ratio*100)+'%';
+        return `<button type="button" aria-pressed="${t===state.rateCustomer}" class="rate-option ${t===state.rateCustomer?'active':''}" data-rate-customer="${t}">
+          <span class="rate-option-title">${typeLabels[t]||t}</span><strong>${fmt(amount)}</strong>${percent?`<small>${percent}</small>`:''}</button>`;
+      }).join('')}</div>
+    </div>`;
+  }).filter(Boolean);
+  $('#finalCustomerTypes').innerHTML=groups.length?groups.join(''):
+    '<div class="no-promo">이 계약조건에 등록된 구독료가 없습니다. 관리방식 또는 약정을 변경하세요.</div>';
   document.querySelectorAll('[data-rate-customer]').forEach(b=>b.onclick=()=>{
     state.rateCustomer=b.dataset.rateCustomer;
     state.commissionType=null;
@@ -274,14 +290,6 @@ function renderFinalRates(row){
     renderFinalRates(selectedRow());renderPromos(selectedRow());updatePrice();
   });
   $('#finalRatePrice').textContent=rate&&state.rateCustomer?fmt(customerPrice(rate,state.rateCustomer)):'-';
-  const legacy=row?.sourceType==='ebook-unmatched'?` 기존 e-book 계약가 ${fmt(row.price)} (참고값)`:'';
-  $('#finalRateDetail').textContent=rate?
-    `${rowSummary(row)} · ${rate.sourceType==='reference-site-2026-10'?'참고 사이트 2026년 10월 요금표':rate.sourceType==='old-photo-archive-2026-10'?'기존 첨부 구독료표':'기존 구독료 데이터'}`:
-    `이 조건은 10월 요금표에서 확인되지 않았습니다.${legacy} · 임의 가격 미사용`;
-  $('#finalRateStatus').textContent=rate?.sourceType==='reference-site-2026-10'?'참고 사이트 10월 요금표 적용':rate?'기존 첨부 가격표 (참고 사이트 미매칭)':'요금표 미확인';
-  const matched=rate&&matchingPromos(row).filter(x=>Number(x.basePriceInPromo||x.promoPrice)===customerPrice(rate,state.rateCustomer));
-  $('#finalPromoMatch').textContent=matched&&matched.length?`e-book 프로모션 기준가와 일치하는 혜택 ${matched.length}건 (아래 별도 표시)`:
-     'e-book 프로모션은 아래에서 조건에 맞는 혜택을 별도로 확인하세요';
 }
 
 function preferredValue(key, vals){
@@ -307,15 +315,24 @@ function renderSelectors(){
   else { warn.classList.add('hidden'); }
   if(!rows.length){ box.innerHTML=''; special.classList.remove('hidden'); special.innerHTML=entry(state.product).rows.map(r=>`<div class="special-row"><span>${r.serviceYearFrom}~${r.serviceYearTo}년차</span><strong>${fmt(r.price)}</strong></div>`).join(''); return; }
   special.classList.add('hidden'); normalizeSelections();
-  let prior={}; let html='';
+  let prior={};
+  const selectorHtml={};
   dimensions.forEach(([key,title])=>{
     const vals=unique(rows.filter(r=>Object.entries(prior).every(([k,v])=>r[k]===v)).map(r=>r[key]));
     if(vals.length){
-      html+=`<div class="selector-group"><label>${title}</label><div class="seg">${vals.map(v=>`<button type="button" data-dim="${key}" data-val="${encodeURIComponent(String(v))}" class="${state.sel[key]===v?'active':''}">${labelVal(key,v)}</button>`).join('')}</div></div>`;
+      selectorHtml[key]=`<div class="selector-group selector-${key}"><label>${title}</label><div class="seg">${vals.map(v=>`<button type="button" data-dim="${key}" data-val="${encodeURIComponent(String(v))}" class="${state.sel[key]===v?'active':''}">${labelVal(key,v)}</button>`).join('')}</div></div>`;
       prior[key]=state.sel[key];
     }
   });
-  box.innerHTML=html;
+  // Keep care mode and its service interval side by side even when a plan selector exists.
+  const pair=[selectorHtml.management,selectorHtml.visitCycleMonths].filter(Boolean);
+  box.innerHTML=[
+    selectorHtml.variant,
+    selectorHtml.size,
+    pair.length?`<div class="selector-care-row">${pair.join('')}</div>`:'',
+    selectorHtml.plan,
+    selectorHtml.contractYears
+  ].filter(Boolean).join('');
   document.querySelectorAll('[data-dim]').forEach(b=>b.onclick=()=>{
     const key=b.dataset.dim; const raw=decodeURIComponent(b.dataset.val); const sample=rows.find(r=>String(r[key])===raw)?.[key];
     state.sel[key]=sample; const idx=dimensions.findIndex(x=>x[0]===key); dimensions.slice(idx+1).forEach(([k])=>delete state.sel[k]);
@@ -380,10 +397,10 @@ function promoCardMarkup(p,active){
 }
 function renderPromos(row){
   const all=productPromos(state.product), block=$('#promoBlock');
-  $('#promoBlockTitle').textContent=`🔥 ${promoMonthText()} e-book 프로모션`;
-  if(!all.length){ block.classList.add('hidden'); state.promoId=null; return; }
+  $('#promoBlockTitle').textContent=`🔥 ${promoMonthText()} 프로모션`;
+  const eligible=all.length?matchingPromos(row):[];
+  if(!eligible.length){ block.classList.add('hidden'); state.promoId=null; return; }
   block.classList.remove('hidden');
-  const eligible=matchingPromos(row);
   const rawTypes=unique(eligible.map(x=>x.customerType));
   const types=['전체',...rawTypes];
   if(!types.includes(state.customerType)) state.customerType=types.includes(state.rateCustomer)?state.rateCustomer:'전체';
@@ -423,11 +440,10 @@ function updatePrice(){
   const r=selectedRow(), special=entry(state.product).rows.filter(x=>x.pricingType);
   const mall=mallBase(r);
   $('#officialPriceLabel').textContent='기본구독료 · SK매직몰';
-  $('#officialPriceSource').textContent='제품목록 기준 참고가 · SK매직몰 대조 필요';
   $('#officialPrice').textContent=mall?fmt(mall):'-';
-  $('#officialSummary').textContent=r?rowSummary(r):'';
-  $('#ebookContractMeta').textContent=mall?'기본구독료 참고값은 약정별 최종 실판매가격이 아닙니다.':
-    special.length?'연차별 e-book 가격 별도 확인':'SK매직몰 기준가 미확인';
+  $('#officialPrice').classList.toggle('base-price-strike', !!mall);
+  $('#officialSummary').textContent='';
+  $('#ebookContractMeta').textContent=mall?'':special.length?'연차별 구독료 확인':'기본구독료 미확인';
   const p=selectedPromo(), rate=chosenFinalRate(r), finalAmount=customerPrice(rate,state.rateCustomer);
   // Critical: never use a generic e-book contract or mall representative as a final customer rate.
   // Promo commission uses before-half base; non-half promo uses stated monthly rate.
