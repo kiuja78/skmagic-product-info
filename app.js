@@ -16,6 +16,7 @@ const state={
   category:'전체',sub:'전체',search:'',product:null,
   sel:{}, customerType:null, rateCustomer:null, promoId:null, commissionType:null,
   cart:JSON.parse(localStorage.getItem(CART_KEY)||'[]'),
+  frameProductId:null, frameEnabled:false,
   photo:{product:null,images:[],index:0}
 };
 const cats=['전체','프로모션','정수기','공기청정기','비데','매트리스'];
@@ -259,6 +260,96 @@ const tariffGroupSections=[
   {title:'타사보상',css:'rate-group-single',types:['타사보상']},
   {title:'구독료',css:'rate-group-single',types:['기본최종']}
 ];
+// Mattress and frame are independent rental lines. Matching uses mattress size
+// and obligation years only: care visit frequency belongs to the mattress.
+function isMattressCore(p){
+  return p?.category==='매트리스' && /^MAT-SM(430|230|730)$/.test(String(p.model||''));
+}
+function frameProducts(){
+  const order=['MAT-SF520','MAT-SF530','MAT-SH520','MAT-SH530','MAT-SH510'];
+  return order.map(m=>products.find(p=>p.model===m)).filter(Boolean);
+}
+function frameRateFor(p,row){
+  if(!p||!row||!row.size||!row.contractYears) return null;
+  return tariffRows(p).find(x=>x.size===row.size && Number(x.contractYears)===Number(row.contractYears))||null;
+}
+function selectedFrameData(row){
+  if(!isMattressCore(state.product)||!state.frameEnabled||!state.frameProductId)return null;
+  const p=frameProducts().find(x=>x.apiId===state.frameProductId);
+  if(!p)return null;
+  const frameRow=frameRateFor(p,row);
+  const amount=customerPrice(frameRow,'기본최종');
+  return frameRow&&amount?{product:p, row:frameRow, monthly:amount}:null;
+}
+function combinedMattressRate(row){
+  const mattress=customerPrice(chosenFinalRate(row),state.rateCustomer);
+  const frame=selectedFrameData(row);
+  return {mattress,frame,total: mattress!=null ? Number(mattress)+(frame?.monthly||0):null};
+}
+function renderFrameAddon(row){
+  const el=$('#frameAddon');
+  if(!isMattressCore(state.product)){
+    el.classList.add('hidden');state.frameEnabled=false;state.frameProductId=null;return;
+  }
+  el.classList.remove('hidden');
+  const valid=frameProducts().filter(p=>frameRateFor(p,row)!=null);
+  if(state.frameEnabled && state.frameProductId && !valid.some(p=>p.apiId===state.frameProductId)){
+    state.frameProductId=null;
+  }
+  $('#frameToggle').innerHTML=[
+    `<button type="button" class="${!state.frameEnabled?'active':''}" data-frame-enabled="false" aria-pressed="${!state.frameEnabled}">선택 안함</button>`,
+    `<button type="button" class="${state.frameEnabled?'active':''}" data-frame-enabled="true" aria-pressed="${state.frameEnabled}">프레임 선택</button>`
+  ].join('');
+  $('#frameContext').textContent=row?.size&&row?.contractYears ?
+    `${sizeLabel(row.size)} · 의무 ${row.contractYears}년 기준으로 선택 가능한 프레임만 표시합니다.` :
+    '매트리스 사이즈와 의무사용기간을 먼저 선택하세요.';
+  const options=$('#frameChoices');
+  options.classList.toggle('hidden',!state.frameEnabled);
+  if(state.frameEnabled){
+    options.innerHTML=frameProducts().map(p=>{
+      const matching=frameRateFor(p,row);
+      const amount=customerPrice(matching,'기본최종');
+      const unavailable=amount==null;
+      return `<button type="button" class="frame-choice ${state.frameProductId===p.apiId?'active':''}" data-frame-id="${p.apiId}" aria-pressed="${state.frameProductId===p.apiId}" ${unavailable?'disabled':''}>
+        <span class="frame-choice-label">${p.title}</span><small>${p.model.replace('MAT-','')}</small>
+        <strong>${unavailable?'선택 불가':fmt(amount)}</strong>
+      </button>`;
+    }).join('');
+  }else{options.innerHTML='';}
+  document.querySelectorAll('[data-frame-enabled]').forEach(b=>b.onclick=()=>{
+    state.frameEnabled=b.dataset.frameEnabled==='true';
+    if(!state.frameEnabled)state.frameProductId=null;
+    else if(state.frameProductId==null && valid.length===1)state.frameProductId=valid[0].apiId;
+    renderFrameAddon(selectedRow()); updatePrice();
+  });
+  document.querySelectorAll('[data-frame-id]').forEach(b=>b.onclick=()=>{
+    const p=frameProducts().find(x=>x.apiId===Number(b.dataset.frameId));
+    if(!p||!frameRateFor(p,selectedRow()))return;
+    state.frameProductId=p.apiId;state.frameEnabled=true;
+    renderFrameAddon(selectedRow()); updatePrice();
+  });
+  refreshFrameBundle(row);
+}
+function refreshFrameBundle(row){
+  if(!isMattressCore(state.product))return;
+  const result=combinedMattressRate(row);
+  const box=$('#frameBundleTotal');
+  if(result.mattress==null){
+    box.innerHTML='<div class="frame-bundle-missing">매트리스 구독료가 확인되면 합산 금액이 표시됩니다.</div>';
+    return;
+  }
+  const framePrice=result.frame?.monthly||0;
+  const desc=result.frame ? result.frame.product.title : '프레임 없음';
+  const status=state.frameEnabled&&!result.frame?'프레임 종류를 선택하면 합산됩니다.':'';
+  box.innerHTML=`<div class="frame-bundle-parts">
+      <span>매트리스 <b>${fmt(result.mattress)}</b></span>
+      <span>${desc} <b>${framePrice?fmt(framePrice):'0원'}</b></span>
+    </div>
+    <div class="frame-bundle-sum"><span>월 합산 구독료</span><strong>${fmt(result.total)}</strong></div>
+    ${status?`<div class="frame-bundle-hint">${status}</div>`:''}
+    ${result.frame?'<div class="frame-bundle-disclaimer">매트리스와 프레임의 월요금 합산입니다. 프레임 수수료는 별도 산정이 필요합니다.</div>':''}`;
+}
+
 function renderFinalRates(row){
   const box=$('#finalRateBlock'), rate=chosenFinalRate(row);
   const types=eligibleRateTypes(rate);
@@ -434,7 +525,7 @@ function renderCalc(){
   const p=state.product;
   $('#selCategory').textContent=p.category; $('#selSubtype').textContent=subtype(p); $('#selTitle').textContent=p.title; $('#selModel').textContent=p.model; $('#selImage').src=p.cover||'';
   $('#quickFeatures').innerHTML=quickFeatures(p).map(x=>`<span class="feature">${x}</span>`).join('');
-  renderSelectors(); const r=selectedRow(); renderFinalRates(r); renderPromos(r); renderMembership(); updatePrice();
+  renderSelectors(); const r=selectedRow(); renderFinalRates(r); renderPromos(r); renderMembership(); renderFrameAddon(r); updatePrice();
 }
 function updatePrice(){
   const r=selectedRow(), special=entry(state.product).rows.filter(x=>x.pricingType);
@@ -459,6 +550,7 @@ function updatePrice(){
   }else{
     $('#applyMeta').textContent=apply?`10월 최종 구독료표 · ${state.rateCustomer||'기본'} 가격 기준`:'최종가격표 또는 e-book 프로모션 해당금액 확인 필요';
   }
+  refreshFrameBundle(r);
   syncCommissionDefaults(r);
   renderCommissionTypes();
   updateCommission();
@@ -492,7 +584,7 @@ function syncCommissionDefaults(r){
   $('#contractMultiplier').value=contract??'';
   $('#profitMultiplier').value=profit.value;
   $('#payoutRate').value=payout===undefined?'':Math.round(payout*100);
-  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${profit.reason} · 정산 전 예상액`;
+  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${profit.reason} · 정산 전 예상액${selectedFrameData(r)?' · 프레임 수수료는 별도 산정(월 구독료 합산만 표시)':''}`;
 }
 function renderCommissionTypes(){
   const box=$('#commissionTypeOptions'), ratio=referencePolicy.rateByType||{};
@@ -515,18 +607,22 @@ function updateCommission(){
 function openSheet(id){
   state.product=products.find(p=>p.apiId===id);
   state.sel={management:'셀프형',contractYears:6};
-  state.customerType='전체'; state.rateCustomer=null; state.promoId=null;state.commissionType=null;
+  state.customerType='전체'; state.rateCustomer=null; state.promoId=null;state.commissionType=null;state.frameProductId=null;state.frameEnabled=false;
   renderCalc(); $('#sheet').classList.remove('hidden'); $('#backdrop').classList.remove('hidden'); document.body.style.overflow='hidden';
 }
 function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.tm); toast.tm=setTimeout(()=>t.classList.remove('show'),1300);}
 $('#addBtn').onclick=()=>{
   const r=selectedRow(), p=selectedPromo(); const apply=Number($('#applyPrice').textContent.replace(/[^\d]/g,''))||0;
   if(!apply){toast('선택 조건의 최종가격이 없습니다. 가격표를 확인해 주세요.');return;} if($('#commissionResult').dataset.value===''){toast('계약기간과 수수료 정책을 확인해 주세요.');return;} const commission=Number($('#commissionResult').dataset.value||0);
-  state.cart.unshift({id:Date.now(),title:state.product.title,model:state.product.model,condition:r?rowSummary(r):'사용연차별',promo:p?p.promoName:'',monthly:apply,customer:state.rateCustomer,commissionType:state.commissionType,commission});
+  const selectedFrame=selectedFrameData(r);
+  const monthly=selectedFrame?apply+selectedFrame.monthly:apply;
+  state.cart.unshift({id:Date.now(),title:state.product.title,model:state.product.model,condition:r?rowSummary(r):'사용연차별',promo:p?p.promoName:'',monthly,baseMonthly:apply,
+    frameModel:selectedFrame?.product.model||null, frameTitle:selectedFrame?.product.title||null, frameMonthly:selectedFrame?.monthly||0,
+    customer:state.rateCustomer,commissionType:state.commissionType,commission});
   localStorage.setItem(CART_KEY,JSON.stringify(state.cart)); renderCart(); toast('계산내역에 추가했습니다'); closeSheet();
 };
 function renderCart(){
-  $('#cartList').innerHTML=state.cart.length?state.cart.map(x=>`<div class="cart-item"><div><b>${x.title}</b><small>${x.model} · ${x.condition} · ${x.customer||'가격유형'} / ${x.commissionType||'정책확인'}${x.promo?' · '+x.promo:''} · 월 ${fmt(x.monthly)}</small></div><div><strong>${x.commission?fmt(x.commission):'정책값 미입력'}</strong><button data-remove="${x.id}" type="button">삭제</button></div></div>`).join(''):'<div class="cart-empty">아직 계산한 제품이 없습니다.</div>';
+  $('#cartList').innerHTML=state.cart.length?state.cart.map(x=>`<div class="cart-item"><div><b>${x.title}</b><small>${x.model} · ${x.condition} · ${x.customer||'가격유형'} / ${x.commissionType||'정책확인'}${x.promo?' · '+x.promo:''}${x.frameModel?' · '+x.frameTitle+' ('+x.frameModel+') '+fmt(x.frameMonthly):''} · 월 ${fmt(x.monthly)}${x.frameModel?' (합산)':''}</small></div><div><strong>${x.commission?fmt(x.commission):'정책값 미입력'}</strong><button data-remove="${x.id}" type="button">삭제</button></div></div>`).join(''):'<div class="cart-empty">아직 계산한 제품이 없습니다.</div>';
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>String(x.id)!==b.dataset.remove); localStorage.setItem(CART_KEY,JSON.stringify(state.cart)); renderCart();});
   const sale=state.cart.reduce((s,x)=>s+Number(x.commission||0),0);
   const bracket=(referencePolicy.brackets||[]).find(b=>state.cart.length>=b.min&&(b.max===null||state.cart.length<=b.max));
