@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.6</title>
-  <link rel="stylesheet" href="./styles.css?v=6.6">
+  <title>SK Magic 제품정보 V6.8</title>
+  <link rel="stylesheet" href="./styles.css?v=6.8">
 </head>
 <body>
 <div class="app">
@@ -51,7 +51,7 @@
   <section class="history">
     <div class="history-head"><div><small>MY CALC</small><h2>계산내역</h2></div><button id="clearCart">전체삭제</button></div>
     <div id="cartList"></div>
-    <div class="total"><span>총 예상 수수료</span><strong id="totalCommission">0원</strong></div>
+    <div class="estimate-parts"><div>판매수수료 <b id="saleCommissionTotal">0원</b></div><div>장려수수료 <small id="incentiveRate"></small><b id="incentiveTotal">0원</b></div></div><div class="total"><span>총 예상 수수료 (판매+장려)</span><strong id="totalCommission">0원</strong></div><p class="policy-small">울산울주지국 MC 개편(안) 참고계산 · 확정 수수료 아님</p>
   </section>
 
   <footer class="developer-footer">
@@ -92,8 +92,8 @@
       </div>
       <aside class="official-price">
         <div class="official-side-head">
-          <span id="officialPriceLabel">선택한 공식 월 구독료</span>
-          <small id="officialPriceSource">SK매직 e-book 계약조건별 가격</small>
+          <span id="officialPriceLabel">기본구독료 · SK매직몰</span>
+          <small id="officialPriceSource">관리방식별 대표 기준가</small>
         </div>
         <strong id="officialPrice">-</strong>
         <p id="officialSummary"></p>
@@ -102,8 +102,15 @@
     </div>
   </section>
 
+  <section id="finalRateBlock" class="block final-rate-block">
+    <div class="block-title"><b>10월 계약유형별 구독료 · 한눈에 비교</b><small id="finalRateStatus">참고 사이트 10월 요금표 기준</small></div>
+    <div id="finalCustomerTypes" class="rate-customer-types"></div>
+    <div class="final-price-display"><strong id="finalRatePrice">-</strong><p id="finalRateDetail"></p></div>
+    <div class="rate-provenance" id="finalPromoMatch"></div>
+  </section>
+
   <section id="promoBlock" class="block hidden">
-    <div class="block-title"><b id="promoBlockTitle">🔥 프로모션</b><small>수수료 계산 적용금액은 반값할인 전 기준가로 계산됩니다.</small></div>
+    <div class="block-title"><b id="promoBlockTitle">🔥 e-book 프로모션</b><small>e-book 등록 제품의 해당 계약조건에만 적용됩니다.</small></div>
     <div id="customerTypes" class="customer-types"></div>
     <div id="promoList" class="promo-list"></div>
   </section>
@@ -112,14 +119,16 @@
     <b>멤버십</b><div id="membershipList"></div>
   </div>
 
+  <div class="commission-type-box"><h3>수수료 계약구분 <small>동일 구독료라도 지급률은 달라집니다</small></h3><div id="commissionTypeOptions" class="commission-type-options"></div><p id="commissionPolicyNote" class="policy-small"></p></div>
+
   <div class="apply-price">
-    <span>수수료 계산 적용 월요금</span>
+    <span>수수료 계산 기준 월요금</span>
     <strong id="applyPrice">-</strong>
     <small id="applyMeta">e-book 계약가 기준</small>
   </div>
 
   <details class="formula">
-    <summary><b>수수료 계산식</b><span>현재 정책값 직접 입력</span></summary>
+    <summary><b>수수료 산정식 상세 · 직접 조정</b><span>기본 정책값 자동 입력</span></summary>
     <div class="fields">
       <label>계약배수<input id="contractMultiplier" type="number" step="0.01" placeholder="예: 5.2"></label>
       <label>이익배수<input id="profitMultiplier" type="number" step="0.01" placeholder="예: 0.8"></label>
@@ -128,7 +137,7 @@
     </div>
   </details>
 
-  <div class="commission"><span>예상 수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
+  <div class="commission"><span>참고 정책 예상 판매수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
   <button id="addBtn" class="cta" type="button">＋ 계산내역에 추가</button>
 </section>
 
@@ -149,7 +158,7 @@
 </div>
 
 <div id="toast" class="toast"></div>
-<script src="./data.js?v=6.6"></script>
-<script src="./app.js?v=6.6"></script>
+<script src="./data.js?v=6.8"></script>
+<script src="./app.js?v=6.8"></script>
 </body>
 </html>

@@ -232,3 +232,39 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 .promo-card[aria-pressed="true"]{border-color:#ef7770;box-shadow:0 0 0 2px #ffb3ae inset;background:#fff8f7}
 .official-side-head small{line-height:1.5}
 @media(max-width:760px){.official-price strong{font-size:30px}.promo-card .condition{line-height:1.55}}
+
+/* V6.7: distinguish mall base, final customer tariff, and e-book promotion */
+.final-rate-block{background:#f3faf8;border-color:#bcded6}
+.final-rate-block .block-title b{font-size:14px;color:#135e54}
+.final-rate-block .block-title small{color:#52897b}
+.rate-customer-types{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.rate-customer-types button{border:1px solid #b4cec7;border-radius:10px;padding:10px 11px;background:#fff;color:#355c55;font-size:11px;font-weight:900;cursor:pointer}
+.rate-customer-types button.active{border-color:#45b9a4;background:#dff8ee;color:#087c6b;box-shadow:0 0 0 1px #45b9a4 inset}
+.final-price-display{margin-top:12px;padding:14px 15px;background:white;border:1px solid #c9e4dc;border-radius:14px}
+.final-price-display strong{font-size:29px;color:#087f6b;letter-spacing:-.04em}
+.final-price-display p{font-size:10px;color:#51677a;line-height:1.6;margin:6px 0 0}
+.rate-provenance{margin-top:9px;font-size:10px;color:#4e6d6a;line-height:1.55}
+.official-price strong{font-size:29px}
+@media(max-width:520px){.rate-customer-types button{padding:9px;font-size:10px}.final-price-display strong{font-size:26px}}
+
+/* V6.8 unified monthly rates / commission */
+.rate-customer-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rate-customer-types .rate-option{display:grid;grid-template-columns:1fr auto;align-items:center;text-align:left;gap:3px 6px;padding:11px 12px;border:1px solid #c7d9d6;border-radius:12px;background:#fff;color:#1f3846;min-width:0;box-shadow:none;line-height:1.5}
+.rate-option .rate-option-title{font-size:12px;font-weight:900;min-width:0}
+.rate-option strong{font-size:16px;white-space:nowrap;color:#142639}
+.rate-option small{grid-column:1/-1;font-size:10px;color:#708193;font-weight:700}
+.rate-customer-types .rate-option.active{background:#e6f8f1;border-color:#45baa8;box-shadow:0 0 0 1px #45baa8 inset}
+.rate-customer-types .rate-option.active strong{color:#087c6b}
+.commission-type-box{border:1px solid #d4e3ef;background:#f7faff;padding:15px;border-radius:15px;margin:14px 0}
+.commission-type-box h3{font-size:14px;margin:0 0 11px;color:#1a3351}
+.commission-type-box h3 small{display:block;margin-top:4px;font-size:10px;font-weight:600;color:#587089}
+.commission-type-options{display:flex;flex-wrap:wrap;gap:7px}
+.commission-type-options button{border:1px solid #c3d6e6;background:#fff;padding:9px 11px;border-radius:10px;font-size:11px;font-weight:800;color:#3d5169;cursor:pointer}
+.commission-type-options button small{font-size:10px;color:inherit}
+.commission-type-options button.active{border-color:#2c77c0;background:#e9f3ff;color:#1255a0}
+.policy-small{font-size:10px;line-height:1.55;color:#73849b;margin:9px 0 0}
+.estimate-parts{display:grid;gap:6px;margin-top:12px;padding:11px 14px;border-top:1px dashed #d9e7ee;font-size:12px}
+.estimate-parts>div{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
+.estimate-parts small{font-size:10px;color:#7b8793}
+.estimate-parts b{margin-left:auto}
+@media(max-width:420px){.rate-customer-types{grid-template-columns:1fr}.rate-option strong{font-size:18px}}
