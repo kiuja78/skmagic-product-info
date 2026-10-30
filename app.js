@@ -1,6 +1,6 @@
 const ARCHIVE=window.SK_MONTH_ARCHIVE||{};
 const DEFAULT_MONTH=window.SK_DEFAULT_MONTH||Object.keys(ARCHIVE).sort().reverse()[0];
-const CART_KEY='sk_v64_cart';
+const CART_KEY='sk_v611_cart';
 let products=[];
 let promos=[];
 let priceDB={};
@@ -19,7 +19,7 @@ const state={
   frameProductId:null, frameEnabled:false,
   photo:{product:null,images:[],index:0}
 };
-const cats=['전체','프로모션','정수기','공기청정기','비데','매트리스'];
+const cats=['전체','프로모션','정수기','공기청정기','비데','매트리스','나무엑스'];
 
 function monthText(){
   const [y,m]=(state.month||'').split('-');
@@ -150,7 +150,7 @@ function renderProducts(){
           <div class="feature-row">${quickFeatures(p).map(x=>`<span class="feature">${x}</span>`).join('')}</div>
           <div class="contract-summary">
             <b>${special?'사용연차별 가격':years.length?`의무사용 ${years.join('·')}년`:'계약가격'}</b>
-            <p>${special?'연차별 가격 별도 확인':`10월 최종표 ${priceRange(p)} · 고객유형·약정별 선택`}</p>
+            <p>${special?'연차별 가격 별도 확인':`${promoMonthText()} 요금표 ${priceRange(p)} · 고객유형·약정별 선택`}</p>
           </div>
           ${renderPromoSummary(p)}
         </div>
@@ -199,6 +199,7 @@ function standardRows(){
   // Mixing unrelated e-book summary rows into that selector silently hid Lite packages.
   const sheet=tariffRows(state.product);
   if(sheet.length)return sheet.map(r=>({...r,price:0}));
+  if(state.month==='2026-11')return []; // 11월 미등록 제품에 10월 계약조건을 보여주지 않습니다.
   return entry(state.product).rows.filter(r=>!r.pricingType).map(r=>({...r,sourceType:'ebook-only-unmatched'}));
 }
 function rowConditionsMatch(rate,row){
@@ -237,7 +238,15 @@ function customerPrice(rate,type){
   return null;
 }
 function eligibleRateTypes(rate){
-  return rate?refTypeOrder.filter(t=>customerPrice(rate,t)!=null):[];
+  if(!rate)return [];
+  return refTypeOrder.filter(t=>{
+    // 11월 원본에는 우대/우대패키지 별도 열이 없습니다.
+    // 지난달 관행으로 재구독 가격을 복제하지 않습니다.
+    if(state.month==='2026-11' && (t==='우대'||t==='우대패키지')){
+      return Object.prototype.hasOwnProperty.call(rate.pricesByCustomer||{},t);
+    }
+    return customerPrice(rate,t)!=null;
+  });
 }
 function chooseRateCustomer(rate){
   const types=eligibleRateTypes(rate);
@@ -278,7 +287,7 @@ function selectedFrameData(row){
   const p=frameProducts().find(x=>x.apiId===state.frameProductId);
   if(!p)return null;
   const frameRow=frameRateFor(p,row);
-  const amount=customerPrice(frameRow,'기본최종');
+  const amount=customerPrice(frameRow,state.rateCustomer)||customerPrice(frameRow,'신규')||customerPrice(frameRow,'기본최종');
   return frameRow&&amount?{product:p, row:frameRow, monthly:amount}:null;
 }
 function combinedMattressRate(row){
@@ -308,7 +317,7 @@ function renderFrameAddon(row){
   if(state.frameEnabled){
     options.innerHTML=frameProducts().map(p=>{
       const matching=frameRateFor(p,row);
-      const amount=customerPrice(matching,'기본최종');
+      const amount=customerPrice(matching,state.rateCustomer)||customerPrice(matching,'신규')||customerPrice(matching,'기본최종');
       const unavailable=amount==null;
       return `<button type="button" class="frame-choice ${state.frameProductId===p.apiId?'active':''}" data-frame-id="${p.apiId}" aria-pressed="${state.frameProductId===p.apiId}" ${unavailable?'disabled':''}>
         <span class="frame-choice-label">${p.title}</span><small>${p.model.replace('MAT-','')}</small>
@@ -363,7 +372,7 @@ function renderFinalRates(row){
       <div class="rate-group-grid">${visible.map(t=>{
         const amount=customerPrice(rate,t);
         const effType=saleTypeForCustomer(t);
-        const ratio=(referencePolicy.rateByType||{})[effType];
+        const ratio=rate?.sheetPayoutRates?.[t]??(referencePolicy.rateByType||{})[effType];
         const percent=ratio==null?'':'지급 '+Math.round(ratio*100)+'%';
         return `<button type="button" aria-pressed="${t===state.rateCustomer}" class="rate-option ${t===state.rateCustomer?'active':''}" data-rate-customer="${t}">
           <span class="rate-option-title">${typeLabels[t]||t}</span><strong>${fmt(amount)}</strong>${percent?`<small>${percent}</small>`:''}</button>`;
@@ -378,7 +387,7 @@ function renderFinalRates(row){
     state.promoId=null;
     const applicable=unique(matchingPromos(selectedRow()).map(x=>x.customerType));
     state.customerType=applicable.includes(state.rateCustomer)?state.rateCustomer:'전체';
-    renderFinalRates(selectedRow());renderPromos(selectedRow());updatePrice();
+    renderFinalRates(selectedRow());renderPromos(selectedRow());renderFrameAddon(selectedRow());updatePrice();
   });
   $('#finalRatePrice').textContent=rate&&state.rateCustomer?fmt(customerPrice(rate,state.rateCustomer)):'-';
 }
@@ -404,7 +413,10 @@ function renderSelectors(){
   if(ent.dataCompleteness==='summary-only'){ warn.textContent=ent.note||'이 제품은 상세 계약기간별 가격표가 아직 수집되지 않아 e-book 요약 가격을 표시합니다.'; warn.classList.remove('hidden'); }
   else if(ent.dataCompleteness==='partial-official'){ warn.textContent=ent.note||'현재 확보된 공식 상세가격 범위만 표시합니다.'; warn.classList.remove('hidden'); }
   else { warn.classList.add('hidden'); }
-  if(!rows.length){ box.innerHTML=''; special.classList.remove('hidden'); special.innerHTML=entry(state.product).rows.map(r=>`<div class="special-row"><span>${r.serviceYearFrom}~${r.serviceYearTo}년차</span><strong>${fmt(r.price)}</strong></div>`).join(''); return; }
+  if(!rows.length){
+    box.innerHTML='<div class="no-promo">선택 월의 계약별 구독료가 등록되지 않았습니다. 금액을 임의로 표시하지 않습니다.</div>';
+    special.classList.add('hidden'); return;
+  }
   special.classList.add('hidden'); normalizeSelections();
   let prior={};
   const selectorHtml={};
@@ -440,12 +452,16 @@ function renderMembership(){
   const m=entry(state.product).memberships||[],w=$('#membershipBlock');
   if(!m.length){w.classList.add('hidden'); return;}
   w.classList.remove('hidden');
-  $('#membershipList').innerHTML=m.map(x=>`<div class="membership-item"><span>${[x.management,x.visitCycleMonths?x.visitCycleMonths+'개월':''].filter(Boolean).join(' · ')}</span><strong>${fmt(x.price)}</strong></div>`).join('');
+  const selSize=state.sel.size;
+  const shown=state.month==='2026-11'&&selSize?m.filter(x=>!x.size||x.size===selSize):m;
+  $('#membershipList').innerHTML=shown.map(x=>`<div class="membership-item"><span>${[x.size?sizeLabel(x.size):null,x.management,x.visitCycleMonths?x.visitCycleMonths+'개월':''].filter(Boolean).join(' · ')}</span><strong>${fmt(x.price)}</strong></div>`).join('');
 }
 // Only promotions for the contract row can be shown or applied.
 // The e-book price matrix and the promotional policy are deliberately kept separate.
 function promoMatchesRow(p,row){
   if(!row) return false;
+  if(p.promoSize && String(row.size)!==String(p.promoSize))return false;
+  if(p.promoPlan && String(row.plan||'')!==String(p.promoPlan))return false;
   if(p.contractYears!=null){
     if(row.contractYears==null || Number(p.contractYears)!==Number(row.contractYears)) return false;
   }
@@ -517,7 +533,12 @@ function renderPromos(row){
     const k=decodeURIComponent(b.dataset.promo);
     if(!matched.some(x=>promoKey(x)===k)) return; // never apply an incompatible offer
     state.promoId=state.promoId===k?null:k;state.commissionType=null;
-    renderPromos(selectedRow());updatePrice();
+    const selectedOffer=matched.find(x=>promoKey(x)===state.promoId);
+    if(selectedOffer){
+      const linked={'신규':'신규','재구독':'재구독'}[selectedOffer.customerType];
+      if(linked&&eligibleRateTypes(chosenFinalRate(selectedRow())).includes(linked))state.rateCustomer=linked;
+    }
+    renderFinalRates(selectedRow());renderPromos(selectedRow());renderFrameAddon(selectedRow());updatePrice();
   });
 }
 
@@ -530,25 +551,27 @@ function renderCalc(){
 function updatePrice(){
   const r=selectedRow(), special=entry(state.product).rows.filter(x=>x.pricingType);
   const mall=mallBase(r);
-  $('#officialPriceLabel').textContent='기본구독료 · SK매직몰';
-  $('#officialPrice').textContent=mall?fmt(mall):'-';
-  $('#officialPrice').classList.toggle('base-price-strike', !!mall);
+  const sheetBase=state.month==='2026-11'?chosenFinalRate(r)?.sheetBasePrice:0;
+  const mainBase=mall||sheetBase||0;
+  $('#officialPriceLabel').textContent=mall?'기본구독료 · SK매직몰':sheetBase?'기준구독료 · 11월 요금표':'기본구독료 · SK매직몰';
+  $('#officialPrice').textContent=mainBase?fmt(mainBase):'-';
+  $('#officialPrice').classList.toggle('base-price-strike',!!mainBase);
   $('#officialSummary').textContent='';
-  $('#ebookContractMeta').textContent=mall?'':special.length?'연차별 구독료 확인':'기본구독료 미확인';
+  $('#ebookContractMeta').textContent=mainBase?'':special.length?'연차별 구독료 확인':'기본구독료 미확인';
   const p=selectedPromo(), rate=chosenFinalRate(r), finalAmount=customerPrice(rate,state.rateCustomer);
   // Critical: never use a generic e-book contract or mall representative as a final customer rate.
   // Promo commission uses before-half base; non-half promo uses stated monthly rate.
   const apply=p?(Number((p.discountMonths&&p.basePriceInPromo)?p.basePriceInPromo:p.promoPrice)||0):Number(finalAmount||0);
   $('#applyPrice').textContent=apply?fmt(apply):'-';
   if(p){
-    const parts=[`e-book 프로모션 · ${p.promoName}`];
+    const parts=[`${promoMonthText()} 프로모션 · ${p.promoName}`];
     if(p.discountMonths){
       if(p.basePriceInPromo)parts.push(`수수료 기준 ${fmt(p.basePriceInPromo)} (반값 전)`);
       parts.push(`${p.discountMonths}개월 반값 ${fmt(p.promoPrice)}`);
     }else{parts.push(`프로모션가 ${fmt(p.promoPrice)}`);}
     $('#applyMeta').textContent=parts.join(' · ');
   }else{
-    $('#applyMeta').textContent=apply?`10월 최종 구독료표 · ${state.rateCustomer||'기본'} 가격 기준`:'최종가격표 또는 e-book 프로모션 해당금액 확인 필요';
+    $('#applyMeta').textContent=apply?`${promoMonthText()} 구독료표 · ${state.rateCustomer||'기본'} 가격 기준`:'선택 월 구독료표에 해당 조건 금액이 없습니다';
   }
   refreshFrameBundle(r);
   syncCommissionDefaults(r);
@@ -577,14 +600,17 @@ function commissionTypeDefault(){
 }
 function syncCommissionDefaults(r){
   const policy=referencePolicy||{}, years=r?.contractYears;
-  const contract=policy.termMultiplier?.[String(years)];
+  const contract=r?.sheetContractMultiplier??policy.termMultiplier?.[String(years)];
   const profit=suggestedProfitMultiplier(state.product);
+  const profitValue=r?.sheetProfitMultiplier??profit.value;
   if(!state.commissionType)state.commissionType=commissionTypeDefault();
-  const payout=policy.rateByType?.[state.commissionType];
+  const sheetType=state.rateCustomer;
+  const payout=(r?.sheetPayoutRates && r.sheetPayoutRates[sheetType]!=null)?r.sheetPayoutRates[sheetType] : policy.rateByType?.[state.commissionType];
   $('#contractMultiplier').value=contract??'';
-  $('#profitMultiplier').value=profit.value;
+  $('#profitMultiplier').value=profitValue;
   $('#payoutRate').value=payout===undefined?'':Math.round(payout*100);
-  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${profit.reason} · 정산 전 예상액${selectedFrameData(r)?' · 프레임 수수료는 별도 산정(월 구독료 합산만 표시)':''}`;
+  const sourceNotice=state.month==='2026-11'&&r?.sheetContractMultiplier!=null?'11월 원본 계약배수·이익배수 적용':profit.reason;
+  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${sourceNotice} · 정산 전 예상액${selectedFrameData(r)?' · 프레임 수수료는 별도 산정(월 구독료 합산만 표시)':''}`;
 }
 function renderCommissionTypes(){
   const box=$('#commissionTypeOptions'), ratio=referencePolicy.rateByType||{};
@@ -644,6 +670,11 @@ function renderMonthSelect(){
 
 $('#brandReload').addEventListener('click', () => window.location.reload());
 
+if(localStorage.getItem('sk_release_month_migrated')!=='2026-11'){
+  state.month='2026-11';
+  localStorage.setItem('sk_selected_month','2026-11');
+  localStorage.setItem('sk_release_month_migrated','2026-11');
+}
 loadMonth(state.month);
 renderMonthSelect();
 renderCats(); renderSub(); renderProducts(); renderCart();
