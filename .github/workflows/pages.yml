@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - 'site.zip'
-      - 'SKMagic_V6_8_site.zip'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -15,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: skmagic-pages
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -28,46 +27,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select and verify V6.8 archive
+      - name: Build and validate site
         shell: bash
         run: |
           set -euo pipefail
+          test -s site.zip || { echo 'Root-level site.zip is missing'; exit 1; }
           rm -rf _site
-          for archive in site.zip SKMagic_V6_8_site.zip; do
-            [ -s "$archive" ] || continue
-            unzip -tq "$archive" || continue
-            mkdir -p _site
-            unzip -q "$archive" -d _site
-            if [ -s _site/index.html ] \
-              && [ -s _site/styles.css ] \
-              && [ -s _site/app.js ] \
-              && [ -s _site/data.js ] \
-              && [ -s _site/reference_rates.json ] \
-              && grep -q 'V6.8' _site/index.html \
-              && grep -q 'SK_MONTH_ARCHIVE' _site/data.js; then
-              echo "Selected valid V6.8 archive: $archive"
-              break
-            fi
-            rm -rf _site
+          mkdir -p _site
+          unzip -q site.zip -d _site
+          for asset in index.html app.js styles.css data.js reference_rates.json apple-touch-icon.png icon-192.png icon-512.png favicon.ico favicon-32.png site.webmanifest; do
+            test -s "_site/$asset" || { echo "Missing asset: $asset"; exit 1; }
           done
-          test -s _site/index.html || {
-            echo 'ERROR: V6.8 site.zip is absent/invalid. Upload the correct V6.8 archive to the repository root.';
-            exit 1;
-          }
-          touch _site/.nojekyll
-          ls -lh _site/
+          grep -q 'SK_MONTH_ARCHIVE' _site/data.js
+          grep -q 'V6.11.1' _site/index.html
+          grep -q 'apple-touch-icon.png' _site/index.html
+          echo 'Validated SK Magic V6.11.1, product DB and mobile icons.'
 
-      - name: Sync extracted files to repository root
+      - name: Keep Pages branch build consistent
         shell: bash
         run: |
           set -euo pipefail
           cp _site/index.html _site/styles.css _site/app.js _site/data.js _site/reference_rates.json ./
+          cp _site/apple-touch-icon.png _site/icon-192.png _site/icon-512.png _site/favicon-32.png _site/favicon.ico _site/site.webmanifest ./
           touch .nojekyll
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html styles.css app.js data.js reference_rates.json .nojekyll
+          git add index.html styles.css app.js data.js reference_rates.json apple-touch-icon.png icon-192.png icon-512.png favicon-32.png favicon.ico site.webmanifest .nojekyll
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish verified SK Magic V6.8 assets [skip ci]'
+            git commit -m 'Publish V6.11.1 with mobile home screen icon [skip ci]'
             git push origin HEAD:main
           fi
 
@@ -76,11 +63,11 @@ jobs:
         with:
           enablement: true
 
-      - name: Upload Pages artifact
+      - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy site
+      - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
