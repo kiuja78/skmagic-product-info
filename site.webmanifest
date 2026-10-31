@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "SK Magic 제품정보",
+  "short_name": "SK매직 제품정보",
+  "description": "SK매직 제품정보 · 구독료 · 프로모션 · 수수료",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7fbff",
+  "theme_color": "#f7fbff",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
