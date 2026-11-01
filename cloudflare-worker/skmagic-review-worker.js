@@ -64,6 +64,12 @@ function getCount(html,label){
   const m=part.match(/class=["']em["']>\s*([\d,]+)\s*</i);
   return m?Number(m[1].replace(/,/g,"")):0;
 }
+function getTotalPages(html){
+  const match=html.match(/id=["']goodsCommentListPage["'][\\s\\S]*?<\\/div>/i);
+  if(!match)return 0;
+  const nums=[...match[0].matchAll(/<span>\\s*(\\d+)\\s*<\\/span>/g)].map(x=>Number(x[1]));
+  return nums.length?Math.max(...nums):0;
+}
 export default {
   async fetch(request){
     if(request.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
@@ -98,7 +104,7 @@ export default {
       return json({
         model:model,goodsId:mapping.goodsId,prdtCd:mapping.prdtCd,
         filter:photos?"photo":"all",page:page,totalCount:totalCount,
-        totalPages:Math.max(1,Math.ceil(totalCount/5)),reviews:reviews,
+        totalPages:getTotalPages(html)||Math.max(1,Math.ceil(totalCount/5)),reviews:reviews,
         source:"SK매직 공식몰"
       });
     }catch(e){return json({error:"후기 조회 중 오류가 발생했습니다.",detail:String(e)},502);}
