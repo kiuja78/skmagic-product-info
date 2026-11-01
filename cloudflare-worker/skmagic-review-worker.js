@@ -19,13 +19,13 @@ function cleanText(value){return String(value||"").replace(/\s+/g," ").trim();}
 function imageOriginal(src){return String(src||"").replace(/_140x96(?=\.[a-z0-9]+(?:\?|$))/i,"");}
 function extractCommentInfo(html){
   const map=new Map();
-  const re=/var COMMENT_IMAGE_LIST = \\[\];([\s\S]*?)COMMENT_INFO\.push\(\s*\{([\s\S]*?)\}\s*\);/g;
+  const re=/var COMMENT_IMAGE_LIST = \[\];([\s\S]*?)COMMENT_INFO\.push\(\s*\{([\s\S]*?)\}\s*\);/g;
   let m;
   while((m=re.exec(html))){
     const id=(m[2].match(/"goodsEstmNo"\s*:\s*"?(\d+)"?/)||[])[1];
-    const contentToken=(m[2].match(/"content"\s*:\s*("(?:\\\.|[^"\\\\])*")/)||[])[1];
-    const content=contentToken?(()=>{try{return JSON.parse(contentToken)}catch{return ""}})():"";
-    const images=[...m[1].matchAll(/"imageSrc"\s*:\s*("(?:\\\.|[^"\\\\])*")/g)].map(x=>{try{return JSON.parse(x[1])}catch{return ""}}).filter(Boolean);
+    const contentToken=(m[2].match(/"content"\s*:\s*("(?:\\.|[^"\\])*")/)||[])[1];
+    const content=contentToken?(()=>{try{return JSON.parse(contentToken)}catch{return "";}})():"";
+    const images=[...m[1].matchAll(/"imageSrc"\s*:\s*("(?:\\.|[^"\\])*")/g)].map(x=>{try{return JSON.parse(x[1]);}catch{return "";}}).filter(Boolean);
     if(id)map.set(id,{content,images});
   }
   return map;
