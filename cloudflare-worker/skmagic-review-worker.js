@@ -19,13 +19,13 @@ function cleanText(value){return String(value||"").replace(/\s+/g," ").trim();}
 function imageOriginal(src){return String(src||"").replace(/_140x96(?=\.[a-z0-9]+(?:\?|$))/i,"");}
 function extractCommentInfo(html){
   const map=new Map();
-  const re=/var COMMENT_IMAGE_LIST = \\[\\];([\\s\\S]*?)COMMENT_INFO\\.push\\(\\s*\\{([\\s\\S]*?)\\}\\s*\\);/g;
+  const re=/var COMMENT_IMAGE_LIST = \\[\];([\s\S]*?)COMMENT_INFO\.push\(\s*\{([\s\S]*?)\}\s*\);/g;
   let m;
   while((m=re.exec(html))){
-    const id=(m[2].match(/"goodsEstmNo"\\s*:\\s*"?(\\d+)"?/)||[])[1];
-    const contentToken=(m[2].match(/"content"\\s*:\\s*("(?:\\\\.|[^"\\\\])*")/)||[])[1];
+    const id=(m[2].match(/"goodsEstmNo"\s*:\s*"?(\d+)"?/)||[])[1];
+    const contentToken=(m[2].match(/"content"\s*:\s*("(?:\\\.|[^"\\\\])*")/)||[])[1];
     const content=contentToken?(()=>{try{return JSON.parse(contentToken)}catch{return ""}})():"";
-    const images=[...m[1].matchAll(/"imageSrc"\\s*:\\s*("(?:\\\\.|[^"\\\\])*")/g)].map(x=>{try{return JSON.parse(x[1])}catch{return ""}}).filter(Boolean);
+    const images=[...m[1].matchAll(/"imageSrc"\s*:\s*("(?:\\\.|[^"\\\\])*")/g)].map(x=>{try{return JSON.parse(x[1])}catch{return ""}}).filter(Boolean);
     if(id)map.set(id,{content,images});
   }
   return map;
@@ -41,7 +41,7 @@ async function parseReviews(html){
         if(full){if(full.content)current.content=full.content;if(full.images.length)current.images=full.images;}
         current.author=cleanText(current.author);
         const rawDate=cleanText(current.date);
-        current.date=(rawDate.match(/\\d{4}\\.\\d{2}\\.\\d{2}/)||[])[0]||rawDate;
+        current.date=(rawDate.match(/\d{4}\.\d{2}\.\d{2}/)||[])[0]||rawDate;
         reviews.push(current);current=null;
       }}
     })
@@ -50,7 +50,7 @@ async function parseReviews(html){
       text(t){if(current)current.content+=t.text;}
     })
     .on(".toggleListNew .date",{text(t){if(current)current.date+=t.text;}})
-    .on(".toggleListNew .grade .ico span",{element(el){if(current){const m=(el.getAttribute("style")||"").match(/width\\s*:\\s*(\\d+)%/);if(m)current.rating=(Number(m[1])/20).toFixed(1);}}})
+    .on(".toggleListNew .grade .ico span",{element(el){if(current){const m=(el.getAttribute("style")||"").match(/width\s*:\s*(\d+)%/);if(m)current.rating=(Number(m[1])/20).toFixed(1);}}})
     .on(".toggleListNew .date .user",{text(t){if(current)current.author+=t.text;}})
     .on(".toggleListNew .tag a",{text(t){if(current){const v=cleanText(t.text);if(v)current.tags.push(v);}}})
     .on(".toggleListNew .thmb img",{element(el){if(current){const src=el.getAttribute("src");if(src)current.images.push(imageOriginal(new URL(src,"https://www.skmagic.com").href));}}})
