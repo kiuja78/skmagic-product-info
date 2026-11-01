@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.11.1</title>
+  <title>SK Magic 제품정보 V6.12</title>
   <meta name="application-name" content="SK매직 제품정보">
   <meta name="apple-mobile-web-app-title" content="SK매직 제품정보">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=6.11.1">
   <link rel="icon" href="./favicon.ico?v=6.11.1" sizes="any">
   <link rel="manifest" href="./site.webmanifest?v=6.11.1">
-  <link rel="stylesheet" href="./styles.css?v=6.11">
+  <link rel="stylesheet" href="./styles.css?v=6.12">
 </head>
 <body>
 <div class="app">
@@ -173,8 +173,29 @@
   </div>
 </div>
 
+
+
+<section id="reviewModal" class="review-modal hidden" aria-hidden="true">
+  <div class="review-modal-backdrop" id="reviewModalBackdrop"></div>
+  <div class="review-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+    <header class="review-modal-head">
+      <div><small>SK MAGIC OFFICIAL REVIEWS</small><h2 id="reviewModalTitle">실제 고객 사용후기</h2><p id="reviewModalProduct"></p></div>
+      <button id="reviewModalClose" type="button" aria-label="후기 닫기">×</button>
+    </header>
+    <div class="review-toolbar">
+      <div class="review-tabs"><button type="button" class="active" data-review-filter="all">전체 후기</button><button type="button" data-review-filter="photo">포토 후기</button></div>
+      <span id="reviewCountLabel">공식몰에서 최신 후기 조회</span>
+    </div>
+    <div id="reviewStatus" class="review-status">후기를 불러오는 중입니다.</div>
+    <div id="reviewList" class="review-list"></div>
+    <footer class="review-pagination"><button id="reviewPrev" type="button" disabled>이전</button><span id="reviewPageLabel">1 페이지</span><button id="reviewNext" type="button" disabled>다음</button></footer>
+    <p class="review-source-note">후기 원문과 사진은 SK매직 공식몰에서 조회하며 자료실에 별도 저장하지 않습니다.</p>
+  </div>
+</section>
+
 <div id="toast" class="toast"></div>
-<script src="./data.js?v=6.11"></script>
-<script src="./app.js?v=6.11"></script>
+<script src="./data.js?v=6.12"></script>
+<script src="./review-config.js?v=1"></script>
+<script src="./app.js?v=6.12"></script>
 </body>
 </html>
