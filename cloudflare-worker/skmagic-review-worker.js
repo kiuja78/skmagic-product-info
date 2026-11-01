@@ -35,7 +35,7 @@ async function parseReviews(html){
   const reviews=[];let current=null;
   const transformed=new HTMLRewriter()
     .on(".toggleListNew li",{
-      element(){current={id:"",content:"",author:"",date:"",images:[],tags:[],rating:"5.0"};},
+      element(){current={id:"",content:"",author:"",date:"",images:[],tags:[],rating:""};},
       end(){if(current){
         const full=commentInfo.get(current.id);
         if(full){if(full.content)current.content=full.content;if(full.images.length)current.images=full.images;}
