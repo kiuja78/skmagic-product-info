@@ -203,7 +203,7 @@ async function loadOfficialReviews(){
     $('#reviewList').innerHTML=data.reviews.map(r=>{
       const imgs=(r.images||[]).map(reviewImageUrl).filter(Boolean);
       return `<article class="official-review-card">
-        <div class="official-review-meta"><strong>★ ${reviewEsc(r.rating||'5.0')}</strong><span>${reviewEsc(r.author||'공식몰 고객')}</span><time>${reviewEsc(r.date||'')}</time></div>
+        <div class="official-review-meta"><strong>${r.rating?("★ "+reviewEsc(r.rating)):""}</strong><span>${reviewEsc(r.author||'공식몰 고객')}</span><time>${reviewEsc(r.date||'')}</time></div>
         <p>${reviewEsc(r.content||'')}</p>
         ${imgs.length?'<div class="official-review-photos">'+imgs.map(src=>`<a href="${reviewEsc(src)}" target="_blank" rel="noopener"><img loading="lazy" src="${reviewEsc(src)}" alt="고객 포토후기"></a>`).join('')+'</div>':''}
         <small>SK매직 공식몰 실제 사용후기</small>
