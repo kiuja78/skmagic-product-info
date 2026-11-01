@@ -155,13 +155,76 @@ function renderProducts(){
           ${renderPromoSummary(p)}
         </div>
       </div>
-      <div class="card-actions"><button data-official="${p.apiId}" type="button">공식 상세</button><button class="calc" data-calc="${p.apiId}" type="button">가격 · 수수료</button></div>
+      <div class="card-actions"><button data-official="${p.apiId}" type="button">공식 상세</button><button data-reviews="${p.apiId}" type="button">실사용 후기</button><button class="calc" data-calc="${p.apiId}" type="button">가격 · 수수료</button></div>
     </article>`;
   }).join(''):'<div class="cart-empty" style="grid-column:1/-1">조건에 맞는 제품이 없습니다.</div>';
   document.querySelectorAll('[data-photo]').forEach(b=>b.onclick=()=>openPhotoViewer(Number(b.dataset.photo)));
   document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(Number(b.dataset.official)));
+  document.querySelectorAll('[data-reviews]').forEach(b=>b.onclick=()=>openReviews(Number(b.dataset.reviews)));
   document.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>openSheet(Number(b.dataset.calc)));
 }
+
+const REVIEW_API_BASE=String(window.SK_REVIEW_API_BASE||'').replace(/\/+$/,'');
+const reviewState={product:null,page:1,filter:'all',totalCount:0,totalPages:1,loading:false};
+const reviewEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function reviewImageUrl(url){try{const u=new URL(url);return ['https:'].includes(u.protocol)?u.href:'';}catch{return '';}}
+function openReviews(id){
+  const p=products.find(x=>x.apiId===id);if(!p)return;
+  reviewState.product=p;reviewState.page=1;reviewState.filter='all';
+  $('#reviewModalTitle').textContent='실제 고객 사용후기';
+  $('#reviewModalProduct').textContent=`${p.title} · ${p.model}`;
+  $('#reviewModal').classList.remove('hidden');$('#reviewModal').setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+  document.querySelectorAll('[data-review-filter]').forEach(b=>b.classList.toggle('active',b.dataset.reviewFilter==='all'));
+  loadOfficialReviews();
+}
+function closeReviews(){
+  $('#reviewModal').classList.add('hidden');$('#reviewModal').setAttribute('aria-hidden','true');
+  if($('#sheet').classList.contains('hidden')&&$('#photoViewer').classList.contains('hidden'))document.body.style.overflow='';
+}
+async function loadOfficialReviews(){
+  const p=reviewState.product;
+  if(!p)return;
+  if(!REVIEW_API_BASE){
+    $('#reviewStatus').textContent='공식 후기 연결 서버 주소가 아직 설정되지 않았습니다. Cloudflare Worker를 배포한 뒤 review-config.js에 주소를 입력하면 실시간 후기가 표시됩니다.';
+    $('#reviewList').innerHTML='';$('#reviewCountLabel').textContent='연동 설정 필요';
+    $('#reviewPrev').disabled=true;$('#reviewNext').disabled=true;return;
+  }
+  reviewState.loading=true;$('#reviewStatus').textContent='SK매직 공식몰에서 후기를 불러오고 있습니다...';$('#reviewList').innerHTML='';
+  try{
+    const qs=new URLSearchParams({model:p.model,page:String(reviewState.page),photos:reviewState.filter==='photo'?'1':'0'});
+    const res=await fetch(`${REVIEW_API_BASE}/reviews?${qs.toString()}`,{headers:{'Accept':'application/json'}});
+    if(!res.ok)throw new Error(`후기 서버 응답 오류 (${res.status})`);
+    const data=await res.json();
+    if(!data||!Array.isArray(data.reviews))throw new Error('후기 데이터 형식이 올바르지 않습니다.');
+    reviewState.totalCount=Number(data.totalCount||0);reviewState.totalPages=Number(data.totalPages||1);
+    $('#reviewCountLabel').textContent=`공식몰 ${reviewState.totalCount.toLocaleString('ko-KR')}건`;
+    $('#reviewStatus').textContent=data.reviews.length?'':'표시할 후기가 없습니다.';
+    $('#reviewList').innerHTML=data.reviews.map(r=>{
+      const imgs=(r.images||[]).map(reviewImageUrl).filter(Boolean);
+      return `<article class="official-review-card">
+        <div class="official-review-meta"><strong>★ ${reviewEsc(r.rating||'5.0')}</strong><span>${reviewEsc(r.author||'공식몰 고객')}</span><time>${reviewEsc(r.date||'')}</time></div>
+        <p>${reviewEsc(r.content||'')}</p>
+        ${imgs.length?'<div class="official-review-photos">'+imgs.map(src=>`<a href="${reviewEsc(src)}" target="_blank" rel="noopener"><img loading="lazy" src="${reviewEsc(src)}" alt="고객 포토후기"></a>`).join('')+'</div>':''}
+        <small>SK매직 공식몰 실제 사용후기</small>
+      </article>`;
+    }).join('');
+    $('#reviewPageLabel').textContent=`${reviewState.page} / ${reviewState.totalPages} 페이지`;
+    $('#reviewPrev').disabled=reviewState.page<=1;$('#reviewNext').disabled=reviewState.page>=reviewState.totalPages;
+  }catch(err){
+    $('#reviewStatus').textContent=`후기를 불러오지 못했습니다. ${err.message}`;
+    $('#reviewCountLabel').textContent='조회 실패';
+  }finally{reviewState.loading=false;}
+}
+$('#reviewModalClose').onclick=closeReviews;$('#reviewModalBackdrop').onclick=closeReviews;
+document.querySelectorAll('[data-review-filter]').forEach(b=>b.addEventListener('click',()=>{
+  reviewState.filter=b.dataset.reviewFilter;reviewState.page=1;
+  document.querySelectorAll('[data-review-filter]').forEach(x=>x.classList.toggle('active',x===b));
+  loadOfficialReviews();
+}));
+$('#reviewPrev').onclick=()=>{if(reviewState.page>1){reviewState.page--;loadOfficialReviews();}};
+$('#reviewNext').onclick=()=>{if(reviewState.page<reviewState.totalPages){reviewState.page++;loadOfficialReviews();}};
+
 function openOfficial(id){const p=products.find(x=>x.apiId===id); const url=p?.officialMallUrl||p?.officialDetailUrl; if(url) window.open(url,'_blank','noopener,noreferrer');}
 function closeSheet(){$('#sheet').classList.add('hidden');$('#backdrop').classList.add('hidden');document.body.style.overflow='';}
 $('#closeSheet').onclick=closeSheet; $('#backdrop').onclick=closeSheet; $('#officialBtn').onclick=()=>state.product&&openOfficial(state.product.apiId); $('#officialImageBtn').onclick=()=>state.product&&openPhotoViewer(state.product.apiId,true);
