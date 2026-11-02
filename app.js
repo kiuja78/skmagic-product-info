@@ -155,14 +155,46 @@ function renderProducts(){
           ${renderPromoSummary(p)}
         </div>
       </div>
-      <div class="card-actions"><button data-official="${p.apiId}" type="button">공식 상세</button><button class="calc" data-calc="${p.apiId}" type="button">가격 · 수수료</button></div>
+      <div class="card-actions"><button data-official="${p.apiId}" type="button" ${officialDetailUrl(p)?'':'disabled title="제품별 공식 상세 웹기술서 링크가 확인되지 않았습니다"'}>${officialButtonText(p)}</button><button class="calc" data-calc="${p.apiId}" type="button">가격 · 수수료</button></div>
     </article>`;
   }).join(''):'<div class="cart-empty" style="grid-column:1/-1">조건에 맞는 제품이 없습니다.</div>';
   document.querySelectorAll('[data-photo]').forEach(b=>b.onclick=()=>openPhotoViewer(Number(b.dataset.photo)));
   document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(Number(b.dataset.official)));
   document.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>openSheet(Number(b.dataset.calc)));
 }
-function openOfficial(id){const p=products.find(x=>x.apiId===id); const url=p?.officialMallUrl||p?.officialDetailUrl; if(url) window.open(url,'_blank','noopener,noreferrer');}
+// 제품 상세는 공식몰 전체 화면보다 별도의 SK매직 e-카탈로그 웹기술서를 우선합니다.
+// 11월 추가 모델 중 같은 공식 문서에 모델명이 명시된 제품은 해당 문서를 공유합니다.
+// 임의의 상세 URL은 만들지 않으며, 확인되지 않은 모델은 버튼을 비활성화합니다.
+const SHARED_OFFICIAL_DETAILS={
+  'WPU-TDC104':'WPU-TDC114',  // 문서명: TDC114,104,10R
+  'WPU-TDC10R':'WPU-TDC114',  // 문서명: TDC114,104,10R
+  'WPU-TDF104':'WPU-TDF114',  // 문서명: TDF104,114
+  'WPU-B710F':'WPU-B700F (NANO)', // 문서명: WPUB700FRENW,WPUB710FRENW
+  'ACL-22C1ASKOB':'ACL-22C1A' // 디 아트 ACL-22C 제품군 공용 문서
+};
+function officialDetailUrl(p){
+  if(!p)return '';
+  const shared=SHARED_OFFICIAL_DETAILS[p.model];
+  const sharedProduct=shared?products.find(x=>x.model===shared):null;
+  const url=p.officialDetailUrl||sharedProduct?.officialDetailUrl||'';
+  // 스토어 전체화면 연결을 방지하기 위해 정식 웹기술서 호스트만 허용합니다.
+  return /^https:\/\/ebookimage\.skmagic\.com\/images\/.+\.html(?:[?#].*)?$/i.test(url)?url:'';
+}
+function officialButtonText(p,long=false){
+  return officialDetailUrl(p)?(long?'SK매직 공식 제품상세 ↗':'공식 상세'):'상세자료 미등록';
+}
+function setOfficialButton(btn,p,long=false){
+  const url=officialDetailUrl(p);
+  btn.disabled=!url;
+  btn.textContent=officialButtonText(p,long);
+  btn.title=url?'공식몰 메뉴 없이 제품별 상세 웹기술서 열기':'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
+}
+function openOfficial(id){
+  const p=products.find(x=>x.apiId===id);
+  const url=officialDetailUrl(p);
+  if(url) window.open(url,'_blank','noopener,noreferrer');
+  else toast('이 모델의 공식 상세 웹기술서는 아직 등록되지 않았습니다.');
+}
 function closeSheet(){$('#sheet').classList.add('hidden');$('#backdrop').classList.add('hidden');document.body.style.overflow='';}
 $('#closeSheet').onclick=closeSheet; $('#backdrop').onclick=closeSheet; $('#officialBtn').onclick=()=>state.product&&openOfficial(state.product.apiId); $('#officialImageBtn').onclick=()=>state.product&&openPhotoViewer(state.product.apiId,true);
 
@@ -185,6 +217,7 @@ function renderPhotoViewer(){
   $('#photoViewerImage').onerror=()=>{ if(product?.cover && $('#photoViewerImage').src!==product.cover) $('#photoViewerImage').src=product.cover; };
   $('#photoViewerThumbs').innerHTML=images.map((src,i)=>`<button type="button" class="${i===index?'active':''}" data-photo-index="${i}"><img src="${src}" alt="썸네일 ${i+1}" referrerpolicy="no-referrer" onerror="this.parentElement.remove()"></button>`).join('');
   document.querySelectorAll('[data-photo-index]').forEach(b=>b.onclick=()=>{state.photo.index=Number(b.dataset.photoIndex); renderPhotoViewer();});
+  setOfficialButton($('#photoViewerOfficial'),product,true);
   $('#photoViewerOfficial').onclick=()=>product&&openOfficial(product.apiId);
 }
 function closePhotoViewer(){ $('#photoViewer').classList.add('hidden'); if($('#sheet').classList.contains('hidden')) document.body.style.overflow=''; }
@@ -376,8 +409,11 @@ function renderFinalRates(row){
         const effType=saleTypeForCustomer(t);
         const ratio=rate?.sheetPayoutRates?.[t]??(referencePolicy.rateByType||{})[effType];
         const percent=ratio==null?'':'지급 '+Math.round(ratio*100)+'%';
+        const crossHalf=t==='타사보상'&&state.month==='2026-11'&&Number(row?.contractYears)>=5&&
+          matchingPromos(row).find(pr=>pr.customerType==='타사보상'&&Number(pr.discountMonths)===5&&Number(pr.basePriceInPromo)===amount);
+        const crossHalfHint=crossHalf?`<small class="cross-half-hint">첫 5개월 ${fmt(crossHalf.promoPrice)}</small>`:'';
         return `<button type="button" aria-pressed="${t===state.rateCustomer}" class="rate-option ${t===state.rateCustomer?'active':''}" data-rate-customer="${t}">
-          <span class="rate-option-title">${typeLabels[t]||t}</span><strong>${fmt(amount)}</strong>${percent?`<small>${percent}</small>`:''}</button>`;
+          <span class="rate-option-title">${typeLabels[t]||t}</span><strong>${fmt(amount)}</strong>${crossHalfHint}${percent?`<small>${percent}</small>`:''}</button>`;
       }).join('')}</div>
     </div>`;
   }).filter(Boolean);
@@ -492,6 +528,16 @@ function selectedPromo(){
   if(!state.product||!state.promoId) return null;
   return matchingPromos(selectedRow()).find(p=>promoKey(p)===state.promoId)||null;
 }
+// 11월 타사보상 5개월 반값은 고객유형·관리방식·약정이 정확히 일치할 때 자동 적용합니다.
+// 3년 약정은 사용자 제공 정책상 제외됩니다. 수수료 기준은 할인 전 타사보상가입니다.
+function automaticCrossHalfPromo(row){
+  if(state.month!=='2026-11'||state.rateCustomer!=='타사보상'||!row||Number(row.contractYears)<5) return null;
+  const base=customerPrice(chosenFinalRate(row),'타사보상');
+  if(!base)return null;
+  return matchingPromos(row).find(pr=>pr.customerType==='타사보상'&&
+    Number(pr.discountMonths)===5&&Number(pr.basePriceInPromo)===base&&
+    pr.promoSourceId?.startsWith('user_2026-11-02_cross_half/'))||null;
+}
 function promoCardMarkup(p,active){
   const mainPrice=p.basePriceInPromo||p.promoPrice;
   const halfLabel=p.discountMonths&&p.basePriceInPromo?`(${p.discountMonths}개월 반값할인 ${fmt(p.promoPrice)})`:'';
@@ -514,6 +560,11 @@ function renderPromos(row){
   const types=['전체',...rawTypes];
   if(!types.includes(state.customerType)) state.customerType=types.includes(state.rateCustomer)?state.rateCustomer:'전체';
   if(state.promoId&&!eligible.some(x=>promoKey(x)===state.promoId)) state.promoId=null;
+  const crossHalf=automaticCrossHalfPromo(row);
+  if(crossHalf){
+    state.promoId=promoKey(crossHalf);
+    state.customerType='타사보상';
+  }
   $('#customerTypes').innerHTML=types.map(t=>{
     const forType=eligible.filter(x=>x.customerType===t);
     const price=t==='전체'||!forType.length?null:Math.min(...forType.map(x=>Number(x.promoPrice||0)).filter(Boolean));
@@ -534,7 +585,10 @@ function renderPromos(row){
   document.querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>{
     const k=decodeURIComponent(b.dataset.promo);
     if(!matched.some(x=>promoKey(x)===k)) return; // never apply an incompatible offer
-    state.promoId=state.promoId===k?null:k;state.commissionType=null;
+    // 타사보상 5개월 혜택은 필수 자동 적용: 카드 재클릭으로 누락되지 않게 보호.
+    const fixed=automaticCrossHalfPromo(selectedRow());
+    state.promoId=(fixed&&promoKey(fixed)===k)?k:(state.promoId===k?null:k);
+    state.commissionType=null;
     const selectedOffer=matched.find(x=>promoKey(x)===state.promoId);
     if(selectedOffer){
       const linked={'신규':'신규','재구독':'재구독'}[selectedOffer.customerType];
@@ -547,6 +601,7 @@ function renderPromos(row){
 function renderCalc(){
   const p=state.product;
   $('#selCategory').textContent=p.category; $('#selSubtype').textContent=subtype(p); $('#selTitle').textContent=p.title; $('#selModel').textContent=p.model; $('#selImage').src=p.cover||'';
+  setOfficialButton($('#officialBtn'),p,true);
   $('#quickFeatures').innerHTML=quickFeatures(p).map(x=>`<span class="feature">${x}</span>`).join('');
   renderSelectors(); const r=selectedRow(); renderFinalRates(r); renderPromos(r); renderMembership(); renderFrameAddon(r); updatePrice();
 }

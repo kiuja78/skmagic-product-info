@@ -381,3 +381,9 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 @media(max-width:400px){.sheet .frame-choice{padding:8px 7px}.sheet .frame-choice-label{font-size:11px}.sheet .frame-bundle-sum strong{font-size:21px}}
 
 .sheet .frame-bundle-disclaimer{font-size:10px;line-height:1.5;color:#738698;margin-top:8px}
+
+/* V6.11.5 · 타사보상 5개월 반값 금액을 구독료 카드에서 즉시 확인 */
+.rate-option .cross-half-hint{color:#b6333b;font-weight:900;background:#fff0f0;border-radius:6px;padding:3px 5px;display:inline-block;margin-top:4px;}
+
+/* Official e-catalog only: unavailable sources must not redirect to full mall. */
+.card-actions button:disabled,.official:disabled{opacity:.52;cursor:not-allowed;background:#f4f6f8;color:#758397;}
