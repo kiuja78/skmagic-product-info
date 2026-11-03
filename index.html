@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7fbff">
-  <title>SK Magic 제품정보 V6.11.7</title>
+  <title>SK Magic 제품정보 V6.11.8</title>
   <meta name="application-name" content="SK매직 제품정보">
   <meta name="apple-mobile-web-app-title" content="SK매직 제품정보">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=6.11.1">
   <link rel="icon" href="./favicon.ico?v=6.11.1" sizes="any">
   <link rel="manifest" href="./site.webmanifest?v=6.11.1">
-  <link rel="stylesheet" href="./styles.css?v=6.11.7">
+  <link rel="stylesheet" href="./styles.css?v=6.11.8">
 </head>
 <body>
 <div class="app">
@@ -63,7 +63,7 @@
   </section>
 
   <footer class="developer-footer">
-    <span>SK Magic Sales Tool · V6.11.7</span>
+    <span>SK Magic Sales Tool · V6.11.8</span>
     <strong>개발자 : 김건일 팀장</strong>
   </footer>
 </div>
@@ -154,6 +154,13 @@
   </details>
 
   <div class="commission"><span>SK매직 정책 기준 예상 판매수수료</span><strong id="commissionResult">정책값 입력 필요</strong></div>
+  <div id="mattressCommissionDetails" class="mattress-commission-details hidden" aria-live="polite">
+    <div class="mattress-commission-row"><span>매트리스 판매수수료</span><b id="mattressCommissionValue">-</b></div>
+    <div class="mattress-commission-row"><span id="frameCommissionLabel">프레임 판매수수료</span><b id="frameCommissionValue">-</b></div>
+    <div id="frameCommissionExtraRow" class="mattress-commission-row hidden"><span>추가수수료</span><b id="frameCommissionExtraValue">0원</b></div>
+    <div class="mattress-commission-row mattress-commission-sum"><span>매트리스 + 프레임 합산</span><strong id="frameCommissionCombined">-</strong></div>
+    <p id="frameCommissionBasis" class="mattress-commission-basis"></p>
+  </div>
   <button id="addBtn" class="cta" type="button">＋ 계산내역에 추가</button>
 </section>
 
@@ -174,7 +181,7 @@
 </div>
 
 <div id="toast" class="toast"></div>
-<script src="./data.js?v=6.11.7"></script>
-<script src="./app.js?v=6.11.7"></script>
+<script src="./data.js?v=6.11.8"></script>
+<script src="./app.js?v=6.11.8"></script>
 </body>
 </html>

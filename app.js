@@ -316,13 +316,19 @@ function frameRateFor(p,row){
   if(!p||!row||!row.size||!row.contractYears) return null;
   return tariffRows(p).find(x=>x.size===row.size && Number(x.contractYears)===Number(row.contractYears))||null;
 }
+function frameCustomerPrice(frameRow){
+  if(!frameRow)return null;
+  const exact=customerPrice(frameRow,state.rateCustomer);
+  // 11월에는 고객유형별 별도 가격을 임의로 대체하면 안 됩니다.
+  return exact??(state.month==='2026-11'?null:customerPrice(frameRow,'기본최종'));
+}
 function selectedFrameData(row){
   if(!isMattressCore(state.product)||!state.frameEnabled||!state.frameProductId)return null;
   const p=frameProducts().find(x=>x.apiId===state.frameProductId);
   if(!p)return null;
   const frameRow=frameRateFor(p,row);
-  const amount=customerPrice(frameRow,state.rateCustomer)||customerPrice(frameRow,'신규')||customerPrice(frameRow,'기본최종');
-  return frameRow&&amount?{product:p, row:frameRow, monthly:amount}:null;
+  const amount=frameCustomerPrice(frameRow);
+  return frameRow&&amount!=null?{product:p, row:frameRow, monthly:amount}:null;
 }
 function combinedMattressRate(row){
   const mattress=customerPrice(chosenFinalRate(row),state.rateCustomer);
@@ -335,7 +341,7 @@ function renderFrameAddon(row){
     el.classList.add('hidden');state.frameEnabled=false;state.frameProductId=null;return;
   }
   el.classList.remove('hidden');
-  const valid=frameProducts().filter(p=>frameRateFor(p,row)!=null);
+  const valid=frameProducts().filter(p=>frameCustomerPrice(frameRateFor(p,row))!=null);
   if(state.frameEnabled && state.frameProductId && !valid.some(p=>p.apiId===state.frameProductId)){
     state.frameProductId=null;
   }
@@ -351,11 +357,12 @@ function renderFrameAddon(row){
   if(state.frameEnabled){
     options.innerHTML=frameProducts().map(p=>{
       const matching=frameRateFor(p,row);
-      const amount=customerPrice(matching,state.rateCustomer)||customerPrice(matching,'신규')||customerPrice(matching,'기본최종');
+      const amount=frameCustomerPrice(matching);
       const unavailable=amount==null;
       return `<button type="button" class="frame-choice ${state.frameProductId===p.apiId?'active':''}" data-frame-id="${p.apiId}" aria-pressed="${state.frameProductId===p.apiId}" ${unavailable?'disabled':''}>
         <span class="frame-choice-label">${p.title}</span><small>${p.model.replace('MAT-','')}</small>
         <strong>${unavailable?'선택 불가':fmt(amount)}</strong>
+        ${!unavailable&&matching?.sheetCommissionByCustomer?.[state.rateCustomer]!=null?`<small class="frame-fee-preview">원본 수수료 ${fmt(matching.sheetCommissionByCustomer[state.rateCustomer])}</small>`:''}
       </button>`;
     }).join('');
   }else{options.innerHTML='';}
@@ -391,7 +398,7 @@ function refreshFrameBundle(row){
     <div class="frame-bundle-sum"><span>월 합산 구독료</span><strong>${fmt(result.total)}</strong></div>
     ${status?`<div class="frame-bundle-hint">${status}</div>`:''}
     ${selectedPromo()?.discountMonths?`<div class="frame-bundle-hint">반값 적용 ${selectedPromo().discountMonths}개월 월 ${fmt(Number(selectedPromo().promoPrice)+(result.frame?.monthly||0))} · 할인 종료 후 월 ${fmt(Number(selectedPromo().priceAfterDiscount||selectedPromo().basePriceInPromo)+(result.frame?.monthly||0))}</div>`:''}
-    ${result.frame?'<div class="frame-bundle-disclaimer">매트리스와 프레임의 월요금 합산입니다. 프레임 수수료는 별도 산정이 필요합니다.</div>':''}`;
+    ${result.frame?'<div class="frame-bundle-disclaimer">판매수수료는 아래에서 매트리스 + 프레임을 각각 계산하여 합산합니다.</div>':''}`;
 }
 
 function renderFinalRates(row){
@@ -670,7 +677,7 @@ function syncCommissionDefaults(r){
   $('#payoutRate').value=payout===undefined?'':Math.round(payout*100);
   state.commissionSourceBaseline={monthly:customerPrice(chosenFinalRate(r),state.rateCustomer),contract:Number(contract),profit:Number(profitValue),payout:Number(payout),fee:chosenFinalRate(r)?.sheetCommissionByCustomer?.[state.rateCustomer]};
   const sourceNotice=state.month==='2026-11'&&r?.sheetContractMultiplier!=null?'11월 원본 계약배수·이익배수 적용':profit.reason;
-  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${sourceNotice} · 정산 전 예상액${selectedFrameData(r)?' · 프레임 수수료는 별도 산정(월 구독료 합산만 표시)':''}`;
+  $('#commissionPolicyNote').textContent=`SK매직 지급정책 · ${sourceNotice} · 정산 전 예상액${selectedFrameData(r)?' · 프레임 수수료 별도 계산 후 합산':''}`;
 }
 function renderCommissionTypes(){
   const box=$('#commissionTypeOptions'), ratio=referencePolicy.rateByType||{};
@@ -682,11 +689,69 @@ function renderCommissionTypes(){
     renderCommissionTypes();updateCommission();
   });
 }
+// 월 구독료를 합산하더라도 프레임 수수료는 별도의 원본 요금행에서 계산합니다.
+// 원본 지급액과 지급률이 일치하면 엑셀 원본 수수료를 그대로 사용합니다.
+function frameCommissionFor(frame, chosenPayout){
+  if(!frame)return null;
+  const r=frame.row, t=state.rateCustomer;
+  const term=Number(r.sheetContractMultipliersByCustomer?.[t]??r.sheetContractMultiplier??referencePolicy.termMultiplier?.[String(r.contractYears)]);
+  const profit=Number(r.sheetProfitMultiplier??suggestedProfitMultiplier(frame.product).value);
+  const originalPayout=r.sheetPayoutRates?.[t]??referencePolicy.rateByType?.[saleTypeForCustomer(t)];
+  const payout=Number.isFinite(chosenPayout)?chosenPayout:Number(originalPayout);
+  const sourceFee=r.sheetCommissionByCustomer?.[t];
+  if(!Number.isFinite(term)||term<=0||!Number.isFinite(profit)||profit<=0||!Number.isFinite(payout))return null;
+  const fromSource=sourceFee!=null && Number.isFinite(Number(sourceFee)) &&
+    originalPayout!=null && Math.abs(payout-Number(originalPayout))<1e-10;
+  const fee=fromSource?Number(sourceFee):Math.round(frame.monthly*term*profit*payout/10)*10;
+  return {fee,term,profit,payout,fromSource,
+    provenance:fromSource?'11월 원본 엑셀 수수료':r.sourceSheet?'프레임 고유 배수 재계산':'참고 정책식 추정 · 원본 수수료 미확인'};
+}
 function updateCommission(){
   const amount=Number($('#applyPrice').textContent.replace(/[^\d]/g,''))||0;
-  const c=Number($('#contractMultiplier').value), pm=Number($('#profitMultiplier').value), rr=$('#payoutRate').value, rate=rr===''?NaN:Number(rr)/100, extra=Number($('#extraCommission').value||0);
-  if(amount&&c>0&&pm>0&&Number.isFinite(rate)){const base=state.commissionSourceBaseline; const sourceMatch=base && amount===base.monthly && c===base.contract && pm===base.profit && Math.abs(rate-base.payout)<1e-10 && extra===0 && Number.isFinite(base.fee); const v=sourceMatch?base.fee:Math.round(amount*c*pm*rate/10)*10+extra; $('#commissionResult').textContent=fmt(v); $('#commissionResult').dataset.value=v;}
-  else{$('#commissionResult').textContent='정책값 입력 필요'; $('#commissionResult').dataset.value='';}
+  const c=Number($('#contractMultiplier').value), pm=Number($('#profitMultiplier').value);
+  const rr=$('#payoutRate').value, rate=rr===''?NaN:Number(rr)/100;
+  const extra=Number($('#extraCommission').value||0);
+  const breakdown=$('#mattressCommissionDetails'), r=selectedRow();
+  const isMattress=isMattressCore(state.product), frame=selectedFrameData(r);
+  breakdown.classList.toggle('hidden',!isMattress||!frame);
+  if(amount&&c>0&&pm>0&&Number.isFinite(rate)){
+    const base=state.commissionSourceBaseline;
+    // 추가수수료 입력 여부와 관계없이 기본 수수료는 원본 값을 먼저 적용합니다.
+    const sourceMatch=base && amount===base.monthly && c===base.contract &&
+      pm===base.profit && Math.abs(rate-base.payout)<1e-10 && Number.isFinite(base.fee);
+    const mattressFee=sourceMatch?Number(base.fee):Math.round(amount*c*pm*rate/10)*10;
+    const frameInfo=frame?frameCommissionFor(frame,rate):null;
+    if(frame&&!frameInfo){
+      $('#commissionResult').textContent='프레임 수수료 확인 필요';
+      $('#commissionResult').dataset.value='';
+      $('#commissionResult').dataset.frame='';
+      $('#mattressCommissionValue').textContent=fmt(mattressFee);
+      $('#frameCommissionValue').textContent='계산 불가';
+      $('#frameCommissionBasis').textContent='프레임 원본 수수료 기준 확인이 필요합니다.';
+      return;
+    }
+    const frameFee=frameInfo?.fee||0;
+    const total=mattressFee+frameFee+extra;
+    $('#commissionResult').textContent=fmt(total);
+    $('#commissionResult').dataset.value=total;
+    $('#commissionResult').dataset.mattress=mattressFee;
+    $('#commissionResult').dataset.frame=frameFee;
+    $('#commissionResult').dataset.frameProvenance=frameInfo?.provenance||'';
+    if(frame){
+      $('#mattressCommissionValue').textContent=fmt(mattressFee);
+      $('#frameCommissionValue').textContent=fmt(frameFee);
+      $('#frameCommissionLabel').textContent=`${frame.product.title} 수수료`;
+      $('#frameCommissionExtraRow').classList.toggle('hidden',!extra);
+      $('#frameCommissionExtraValue').textContent=fmt(extra);
+      $('#frameCommissionCombined').textContent=fmt(total);
+      $('#frameCommissionBasis').textContent=`프레임 ${frameInfo.provenance} · 의무배수 ${frameInfo.term} · 이익배수 ${frameInfo.profit} · 지급률 ${Math.round(frameInfo.payout*1000)/10}% · 산정식 직접 조정은 매트리스에만 적용 (지급률은 양쪽 공통)`;
+    }
+  }else{
+    $('#commissionResult').textContent='정책값 입력 필요';
+    $('#commissionResult').dataset.value='';
+    $('#commissionResult').dataset.mattress='';
+    $('#commissionResult').dataset.frame='';
+  }
 }
 ['contractMultiplier','profitMultiplier','payoutRate','extraCommission'].forEach(id=>$('#'+id).addEventListener('input',updateCommission));
 
@@ -704,6 +769,9 @@ $('#addBtn').onclick=()=>{
   const selectedFrame=selectedFrameData(r);
   if(isMattressCore(state.product)&&state.frameEnabled&&!selectedFrame){toast('프레임 종류와 사이즈·의무기간을 확인하세요.');return;}
   const commission=Number($('#commissionResult').dataset.value||0);
+  const mattressCommission=Number($('#commissionResult').dataset.mattress||commission);
+  const frameCommission=Number($('#commissionResult').dataset.frame||0);
+  const frameCommissionProvenance=$('#commissionResult').dataset.frameProvenance||'';
   const isHalfPromo=!!(p&&p.discountMonths&&p.promoPrice);
   const afterBase=isHalfPromo?Number(p.priceAfterDiscount||p.basePriceInPromo||apply):apply;
   // Billing (promotional monthly) must be distinct from commission reference (before half discount).
@@ -712,24 +780,28 @@ $('#addBtn').onclick=()=>{
   state.cart.unshift({id:Date.now(),month:state.month,title:state.product.title,model:state.product.model,condition:r?rowSummary(r):'사용연차별',promo:p?p.promoName:'',monthly,afterMonthly,
     promoMonths:isHalfPromo?Number(p.discountMonths):0,baseMonthly:apply,
     frameModel:selectedFrame?.product.model||null, frameTitle:selectedFrame?.product.title||null, frameMonthly:selectedFrame?.monthly||0,
+    mattressCommission,frameCommission,frameCommissionProvenance,
     customer:state.rateCustomer,commissionType:state.commissionType,commission});
   localStorage.setItem(CART_KEY,JSON.stringify(state.cart)); renderCart(); toast('계산내역에 추가했습니다'); closeSheet();
 };
 function renderCart(){
   const current=state.cart.filter(x=>x.month===state.month);
   const other=state.cart.filter(x=>x.month!==state.month);
+  const isLegacyFrame=x=>!!x.frameModel&&!Object.prototype.hasOwnProperty.call(x,'frameCommission');
+  const validated=current.filter(x=>!isLegacyFrame(x));
   const itemMarkup=(x,excluded=false)=>{
+    const oldFrame=isLegacyFrame(x);
     const priceText=x.promoMonths?`처음 ${x.promoMonths}개월 월 ${fmt(x.monthly)} · 이후 월 ${fmt(x.afterMonthly)}`:`월 ${fmt(x.monthly)}`;
-    return `<div class="cart-item"><div><b>${x.title}</b><small>${x.month||'기준월 미확인'} · ${x.model} · ${x.condition} · ${x.customer||'가격유형'} / ${x.commissionType||'정책확인'}${x.promo?' · '+x.promo:''}${x.frameModel?' · '+x.frameTitle+' ('+x.frameModel+') '+fmt(x.frameMonthly):''} · ${priceText}${x.frameModel?' (월 구독료는 프레임 합산, 프레임 수수료는 미포함)':''}${excluded?' · 현 기준월 합계 제외':''}</small></div><div><strong>${x.commission?fmt(x.commission):'정책값 미입력'}</strong><button data-remove="${x.id}" type="button">삭제</button></div></div>`;
+    return `<div class="cart-item"><div><b>${x.title}</b><small>${x.month||'기준월 미확인'} · ${x.model} · ${x.condition} · ${x.customer||'가격유형'} / ${x.commissionType||'정책확인'}${x.promo?' · '+x.promo:''}${x.frameModel?' · '+x.frameTitle+' ('+x.frameModel+') '+fmt(x.frameMonthly):''} · ${priceText}${x.frameModel?(oldFrame?' · ⚠️ 이전 프레임 수수료 누락 기록: 삭제 후 재계산 필요':` · 수수료: 매트리스 ${fmt(x.mattressCommission)} + 프레임 ${fmt(x.frameCommission)}${x.frameCommissionProvenance?.includes('추정')?' (프레임 추정)':''}`):''}${excluded||oldFrame?' · 합계 제외':''}</small></div><div><strong>${oldFrame?'재계산 필요':x.commission?fmt(x.commission):'정책값 미입력'}</strong><button data-remove="${x.id}" type="button">삭제</button></div></div>`;
   };
   $('#cartList').innerHTML=(current.length?current.map(x=>itemMarkup(x)).join(''):'<div class="cart-empty">현재 기준월 계산내역이 없습니다.</div>')+
     (other.length?`<div class="cart-empty" style="font-weight:700">다른 기준월 / 기준월 미확인 계산내역 ${other.length}건 (현재 합계에서 제외)</div>`+other.map(x=>itemMarkup(x,true)).join(''):'');
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>String(x.id)!==b.dataset.remove); localStorage.setItem(CART_KEY,JSON.stringify(state.cart)); renderCart();});
-  const sale=current.reduce((s,x)=>s+Number(x.commission||0),0);
-  const bracket=(referencePolicy.brackets||[]).find(b=>current.length>=b.min&&(b.max===null||current.length<=b.max));
+  const sale=validated.reduce((s,x)=>s+Number(x.commission||0),0);
+  const bracket=(referencePolicy.brackets||[]).find(b=>validated.length>=b.min&&(b.max===null||validated.length<=b.max));
   const incentive=Math.round(sale*(bracket?.rate||0));
   $('#saleCommissionTotal').textContent=fmt(sale);
-  $('#incentiveRate').textContent=`${state.month.replace('-','.')} · ${current.length}건 · ${Math.round((bracket?.rate||0)*100)}%`;
+  $('#incentiveRate').textContent=`${state.month.replace('-','.')} · ${validated.length}건${validated.length!==current.length?` (이전 프레임 미검증 ${current.length-validated.length}건 제외)`:''} · ${Math.round((bracket?.rate||0)*100)}%`;
   $('#incentiveTotal').textContent=fmt(incentive);
   $('#totalCommission').textContent=fmt(sale+incentive);
 }
