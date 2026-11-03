@@ -177,17 +177,18 @@ function officialDetailUrl(p){
   const shared=SHARED_OFFICIAL_DETAILS[p.model];
   const sharedProduct=shared?products.find(x=>x.model===shared):null;
   const url=p.officialDetailUrl||sharedProduct?.officialDetailUrl||'';
-  // 스토어 전체화면 연결을 방지하기 위해 정식 웹기술서 호스트만 허용합니다.
+  // 공식 SK매직 웹기술서만 허용합니다. 나무엑스는 브랜드 공식몰의 특정 A1 제품 상세 링크만 예외적으로 허용합니다.
+  if(p.model==='WRB-NAMUX' && url==='https://www.namuhx.com/goods/goods_view_plan.php?goodsNo=1000000017') return url;
   return /^https:\/\/ebookimage\.skmagic\.com\/images\/.+\.html(?:[?#].*)?$/i.test(url)?url:'';
 }
 function officialButtonText(p,long=false){
-  return officialDetailUrl(p)?(long?'SK매직 공식 제품상세 ↗':'공식 상세'):'상세자료 미등록';
+  return officialDetailUrl(p)?(p?.model==='WRB-NAMUX'?(long?'나무엑스 공식 제품상세 ↗':'공식 상세'):(long?'SK매직 공식 제품상세 ↗':'공식 상세')):'상세자료 미등록';
 }
 function setOfficialButton(btn,p,long=false){
   const url=officialDetailUrl(p);
   btn.disabled=!url;
   btn.textContent=officialButtonText(p,long);
-  btn.title=url?'공식몰 메뉴 없이 제품별 상세 웹기술서 열기':'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
+  btn.title=url?(p?.model==='WRB-NAMUX'?'나무엑스 브랜드 공식 제품 상세페이지 열기':'공식몰 메뉴 없이 제품별 상세 웹기술서 열기'):'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
 }
 function openOfficial(id){
   const p=products.find(x=>x.apiId===id);
