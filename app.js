@@ -16,7 +16,7 @@ const state={
   category:'전체',sub:'전체',search:'',product:null,
   sel:{}, customerType:null, rateCustomer:null, promoId:null, commissionType:null,
   cart:JSON.parse(localStorage.getItem(CART_KEY)||'[]'),
-  frameProductId:null, frameEnabled:false,
+  frameProductId:null, frameEnabled:false, frameHalfOptOut:false,
   photo:{product:null,images:[],index:0}
 };
 const cats=['전체','프로모션','정수기','공기청정기','비데','매트리스','나무엑스'];
@@ -330,10 +330,32 @@ function selectedFrameData(row){
   const amount=frameCustomerPrice(frameRow);
   return frameRow&&amount!=null?{product:p, row:frameRow, monthly:amount}:null;
 }
+// 11월 프레임 역시 원본 표에 '신규/재구독 6개월 반값' 별도 가격이 존재합니다.
+function frameHalfOffer(frame){
+  if(state.month!=='2026-11'||!frame||!['신규','재구독'].includes(state.rateCustomer))return null;
+  return productPromos(frame.product).find(pr=>
+    pr.customerType===state.rateCustomer && pr.promoSize===frame.row.size &&
+    Number(pr.contractYears)===Number(frame.row.contractYears) &&
+    Number(pr.discountMonths)===6 && Number(pr.basePriceInPromo)===Number(frame.monthly))||null;
+}
+function bundleMonthData(row){
+  const frame=selectedFrameData(row), promo=selectedPromo();
+  const tariff=customerPrice(chosenFinalRate(row),state.rateCustomer);
+  if(tariff==null)return {frame,tariff:null};
+  const mattressAfter=promo
+    ? Number(promo.discountMonths?(promo.priceAfterDiscount||promo.basePriceInPromo||tariff):promo.promoPrice||tariff)
+    : Number(tariff);
+  const mattressIntro=promo?.discountMonths?Number(promo.promoPrice):mattressAfter;
+  const frameOffer=frame&&!state.frameHalfOptOut?frameHalfOffer(frame):null;
+  const frameAfter=frame?.monthly||0, frameIntro=frameOffer?Number(frameOffer.promoPrice):frameAfter;
+  const promoMonths=Math.max(Number(promo?.discountMonths||0),Number(frameOffer?.discountMonths||0));
+  return {frame,promo,frameOffer,tariff,mattressAfter,mattressIntro,frameAfter,frameIntro,
+    before:Number(tariff)+frameAfter, first:mattressIntro+frameIntro,
+    after:mattressAfter+frameAfter, promoMonths};
+}
 function combinedMattressRate(row){
-  const mattress=customerPrice(chosenFinalRate(row),state.rateCustomer);
-  const frame=selectedFrameData(row);
-  return {mattress,frame,total: mattress!=null ? Number(mattress)+(frame?.monthly||0):null};
+  const data=bundleMonthData(row);
+  return {mattress:data.tariff,frame:data.frame,total:data.before};
 }
 function renderFrameAddon(row){
   const el=$('#frameAddon');
@@ -378,29 +400,43 @@ function renderFrameAddon(row){
     state.frameProductId=p.apiId;state.frameEnabled=true;
     renderFrameAddon(selectedRow()); updatePrice();
   });
+  // 프레임 반값을 별도 선택/해제할 수 있으며, 추가 할인이 가능한 고객유형만 표시됩니다.
+  const halfFrame=selectedFrameData(row), halfOffer=frameHalfOffer(halfFrame);
+  const halfBox=$('#frameHalfOption');
+  halfBox.classList.toggle('hidden',!halfOffer);
+  halfBox.innerHTML=halfOffer?`<div class="frame-half-title">프레임 6개월 반값할인 · ${state.rateCustomer}</div>
+    <div class="frame-half-desc">원본 프레임 ${fmt(halfFrame.monthly)} → 첫 6개월 ${fmt(halfOffer.promoPrice)}</div>
+    <div class="frame-half-buttons" role="group" aria-label="프레임 반값 적용 여부">
+      <button type="button" class="${!state.frameHalfOptOut?'active':''}" data-frame-half="true">반값 적용</button>
+      <button type="button" class="${state.frameHalfOptOut?'active':''}" data-frame-half="false">미적용</button>
+    </div><small>프레임 자체의 반값 조건입니다. 매트리스와 동시 할인 가능 여부는 계약 시 확인하세요.</small>`:'';
+  document.querySelectorAll('[data-frame-half]').forEach(b=>b.onclick=()=>{
+    state.frameHalfOptOut=b.dataset.frameHalf==='false';
+    renderFrameAddon(selectedRow());updatePrice();
+  });
   refreshFrameBundle(row);
 }
 function refreshFrameBundle(row){
   if(!isMattressCore(state.product))return;
-  const result=combinedMattressRate(row);
-  const box=$('#frameBundleTotal');
-  if(result.mattress==null){
+  const result=bundleMonthData(row),box=$('#frameBundleTotal');
+  if(result.tariff==null){
     box.innerHTML='<div class="frame-bundle-missing">매트리스 구독료가 확인되면 합산 금액이 표시됩니다.</div>';
     return;
   }
-  const framePrice=result.frame?.monthly||0;
   const desc=result.frame ? result.frame.product.title : '프레임 없음';
   const status=state.frameEnabled&&!result.frame?'프레임 종류를 선택하면 합산됩니다.':'';
+  const promoLine=result.promoMonths?`<div class="frame-bundle-sum frame-bundle-intro"><span>첫 ${result.promoMonths}개월 월 구독료</span><strong>${fmt(result.first)}</strong></div>
+    <div class="frame-bundle-hint">할인 종료 후 월 ${fmt(result.after)} · 매트리스 ${fmt(result.mattressAfter)} + 프레임 ${fmt(result.frameAfter)}</div>`:'';
   box.innerHTML=`<div class="frame-bundle-parts">
-      <span>매트리스 <b>${fmt(result.mattress)}</b></span>
-      <span>${desc} <b>${framePrice?fmt(framePrice):'0원'}</b></span>
+      <span>매트리스 <b>${fmt(result.tariff)}</b></span>
+      <span>${desc} <b>${fmt(result.frameAfter)}</b></span>
     </div>
-    <div class="frame-bundle-sum"><span>월 합산 구독료</span><strong>${fmt(result.total)}</strong></div>
+    <div class="frame-bundle-sum"><span>${result.promoMonths?'선택조건 기준 월 합계':'월 합산 구독료'}</span><strong>${fmt(result.after)}</strong></div>
+    ${promoLine}
+    ${result.frameOffer?`<div class="frame-bundle-hint">프레임 첫 6개월 반값 ${fmt(result.frameIntro)} 적용 · 수수료 기준은 할인 전 금액</div>`:''}
     ${status?`<div class="frame-bundle-hint">${status}</div>`:''}
-    ${selectedPromo()?.discountMonths?`<div class="frame-bundle-hint">반값 적용 ${selectedPromo().discountMonths}개월 월 ${fmt(Number(selectedPromo().promoPrice)+(result.frame?.monthly||0))} · 할인 종료 후 월 ${fmt(Number(selectedPromo().priceAfterDiscount||selectedPromo().basePriceInPromo)+(result.frame?.monthly||0))}</div>`:''}
-    ${result.frame?'<div class="frame-bundle-disclaimer">판매수수료는 아래에서 매트리스 + 프레임을 각각 계산하여 합산합니다.</div>':''}`;
+    ${result.frame?'<div class="frame-bundle-disclaimer">판매수수료는 매트리스 + 프레임을 각각 원본 금액으로 계산해 합산합니다.</div>':''}`;
 }
-
 function renderFinalRates(row){
   const box=$('#finalRateBlock'), rate=chosenFinalRate(row);
   const types=eligibleRateTypes(rate);
@@ -514,6 +550,8 @@ function promoMatchesRow(p,row){
   const m=String(p.managementType||'');
   if(m.includes('무방문')){
     if(row.management && row.management!=='셀프형') return false;
+    // 무방문 프로모션은 계약의 관리주기 0개월에만 허용합니다.
+    if(row.visitCycleMonths!=null && Number(row.visitCycleMonths)!==0) return false;
   }else if(m.includes('Lite')){
     // Lite is a separate service plan, not a synonym for either visit or self.
     if(row.plan && String(row.plan).toLowerCase()!=='lite') return false;
@@ -583,7 +621,7 @@ function renderPromos(row){
     state.promoId=null;state.commissionType=null;
     const linked={'신규':'신규','재구독':'재구독','타사보상':'타사보상','크로스/재구독':'재구독'}[state.customerType];
     if(linked&&eligibleRateTypes(chosenFinalRate(selectedRow())).includes(linked))state.rateCustomer=linked;
-    renderFinalRates(selectedRow());renderPromos(selectedRow()); updatePrice();
+    renderFinalRates(selectedRow());renderPromos(selectedRow());renderFrameAddon(selectedRow());updatePrice();
   });
   const matched=eligible.filter(p=>state.customerType==='전체'||p.customerType===state.customerType);
   const summary=rowSummary(row);
@@ -617,11 +655,15 @@ function updatePrice(){
   const r=selectedRow(), special=entry(state.product).rows.filter(x=>x.pricingType);
   const mall=mallBase(r);
   const sheetBase=state.month==='2026-11'?chosenFinalRate(r)?.sheetBasePrice:0;
-  const mainBase=mall||sheetBase||0;
-  $('#officialPriceLabel').textContent=mall?'기본구독료 · SK매직몰 참고':sheetBase?'기준구독료 · 11월 요금표':'기본구독료 · SK매직몰 미확인';
+  // 11월 매트리스/프레임의 '정상 구독료'는 첨부 엑셀 G열의 계약조건별 정상가입니다.
+  // 제품 단위 공식몰 대표가로 덮어쓰면 사이즈/약정/방문주기마다 오표시됩니다.
+  const exactMattressNormal=state.month==='2026-11' && state.product?.category==='매트리스'
+    ? Number(chosenFinalRate(r)?.sheetNormalPrice||0):0;
+  const mainBase=exactMattressNormal||mall||sheetBase||0;
+  $('#officialPriceLabel').textContent=exactMattressNormal?'정상 구독료 · 11월 매트리스 원본':mall?'기본구독료 · SK매직몰 참고':sheetBase?'기준구독료 · 11월 요금표':'기본구독료 · SK매직몰 미확인';
   $('#officialPrice').textContent=mainBase?fmt(mainBase):'-';
   $('#officialPrice').classList.toggle('base-price-strike',!!mainBase);
-  $('#officialSummary').textContent='';
+  $('#officialSummary').textContent=exactMattressNormal&&sheetBase?`기준구독료 ${fmt(sheetBase)} · 고객유형별 금액은 아래에서 선택`:'';
   $('#ebookContractMeta').textContent=mainBase?'':special.length?'연차별 구독료 확인':'기본구독료 미확인';
   const p=selectedPromo(), rate=chosenFinalRate(r), finalAmount=customerPrice(rate,state.rateCustomer);
   // Critical: never use a generic e-book contract or mall representative as a final customer rate.
@@ -758,7 +800,7 @@ function updateCommission(){
 function openSheet(id){
   state.product=products.find(p=>p.apiId===id);
   state.sel={management:'셀프형',contractYears:6};
-  state.customerType='전체'; state.rateCustomer=null; state.promoId=null;state.commissionType=null;state.frameProductId=null;state.frameEnabled=false;
+  state.customerType='전체'; state.rateCustomer=null; state.promoId=null;state.commissionType=null;state.frameProductId=null;state.frameEnabled=false;state.frameHalfOptOut=false;
   renderCalc(); $('#sheet').classList.remove('hidden'); $('#backdrop').classList.remove('hidden'); document.body.style.overflow='hidden';
 }
 function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.tm); toast.tm=setTimeout(()=>t.classList.remove('show'),1300);}
@@ -774,11 +816,13 @@ $('#addBtn').onclick=()=>{
   const frameCommissionProvenance=$('#commissionResult').dataset.frameProvenance||'';
   const isHalfPromo=!!(p&&p.discountMonths&&p.promoPrice);
   const afterBase=isHalfPromo?Number(p.priceAfterDiscount||p.basePriceInPromo||apply):apply;
-  // Billing (promotional monthly) must be distinct from commission reference (before half discount).
-  const monthly=(isHalfPromo?Number(p.promoPrice):apply)+(selectedFrame?.monthly||0);
-  const afterMonthly=afterBase+(selectedFrame?.monthly||0);
+  const bundle=isMattressCore(state.product)?bundleMonthData(r):null;
+  // 화면과 계산내역은 같은 원본 기반 합산 함수를 공유합니다.
+  const monthly=bundle?bundle.first:(isHalfPromo?Number(p.promoPrice):apply);
+  const afterMonthly=bundle?bundle.after:afterBase;
+  const bundlePromoMonths=bundle?bundle.promoMonths:(isHalfPromo?Number(p.discountMonths):0);
   state.cart.unshift({id:Date.now(),month:state.month,title:state.product.title,model:state.product.model,condition:r?rowSummary(r):'사용연차별',promo:p?p.promoName:'',monthly,afterMonthly,
-    promoMonths:isHalfPromo?Number(p.discountMonths):0,baseMonthly:apply,
+    promoMonths:bundlePromoMonths,baseMonthly:apply,frameHalfApplied:!!bundle?.frameOffer,
     frameModel:selectedFrame?.product.model||null, frameTitle:selectedFrame?.product.title||null, frameMonthly:selectedFrame?.monthly||0,
     mattressCommission,frameCommission,frameCommissionProvenance,
     customer:state.rateCustomer,commissionType:state.commissionType,commission});

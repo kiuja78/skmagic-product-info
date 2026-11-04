@@ -397,3 +397,13 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 .sheet .mattress-commission-sum strong{font-size:20px;white-space:nowrap;color:#067a68}
 .sheet .mattress-commission-basis{font-size:10px;color:#667f88;line-height:1.6;margin:8px 0 0}
 @media(max-width:390px){.sheet .mattress-commission-row{font-size:11px}.sheet .mattress-commission-sum strong{font-size:18px}}
+
+/* V6.11.9: 프레임 6개월 반값을 독립적으로 선택하고 합산 월요금을 일치시킵니다 */
+.sheet .frame-half-option{margin-top:10px;padding:10px 12px;border:1px solid #c8e4de;background:#effbf7;border-radius:12px}
+.sheet .frame-half-title{font-size:12px;font-weight:900;color:#135e56}
+.sheet .frame-half-desc{font-size:12px;color:#28516a;font-weight:700;margin-top:4px}
+.sheet .frame-half-buttons{display:flex;gap:7px;margin:8px 0 5px}
+.sheet .frame-half-buttons button{padding:6px 12px;min-height:32px;border:1px solid #c6ddd7;border-radius:8px;background:#fff;color:#43616a;font-weight:800;font-size:11px}
+.sheet .frame-half-buttons button.active{background:#daf6e9;border-color:#35ae94;color:#007b68}
+.sheet .frame-half-option small{font-size:10px;color:#698085;line-height:1.55}
+.sheet .frame-bundle-intro strong{color:#bc3d4a}
