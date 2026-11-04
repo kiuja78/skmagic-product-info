@@ -64,6 +64,11 @@ function promoDisplayLabel(pr){
   return pr.group||'프로모션';
 }
 function renderPromoSummary(p){
+  // 매트리스·프레임은 사이즈 및 계약기간별로 요금이 달라서,
+  // 카드에 무작위 첫 번째 프로모션 금액을 노출하면 SS/Q/K 가격으로 오해할 수 있습니다.
+  if(state.month==='2026-11' && p.category==='매트리스' && productPromos(p).length){
+    return '<div class="mattress-card-price-notice">6개월 반값 대상 · 사이즈·약정·유형 선택 후 정확한 금액 확인</div>';
+  }
   const ps=productPromos(p);
   if(!ps.length) return '';
   const seen=new Set();
@@ -353,6 +358,46 @@ function bundleMonthData(row){
     before:Number(tariff)+frameAfter, first:mattressIntro+frameIntro,
     after:mattressAfter+frameAfter, promoMonths};
 }
+// V6.11.10: 매트리스 할인 전 정상가와 실제 고객유형별 계약 월 구독료를 명확하게 구분합니다.
+// 화면의 연도별 가격은 JSON에 저장된 동일 행의 pricesByCustomer만 사용합니다.
+function renderMattressPriceComparison(row){
+  const box=$('#mattressPriceCompare'), status=$('#mattressConditionStatus');
+  const enabled=state.month==='2026-11'&&isMattressCore(state.product)&&!!row;
+  box.classList.toggle('hidden',!enabled);
+  status.classList.toggle('hidden',!enabled);
+  $('.official-price').classList.toggle('mattress-normal',enabled);
+  if(!enabled){box.innerHTML='';status.innerHTML='';return;}
+  const rates=tariffRows(state.product), t=state.rateCustomer;
+  const sameCondition=(r)=>r.size===row.size&&r.management===row.management&&
+    Number(r.visitCycleMonths)===Number(row.visitCycleMonths) && r.plan===row.plan;
+  const matching=rates.filter(sameCondition);
+  const contractYears=[...new Set(matching.map(r=>Number(r.contractYears)))].sort((x,y)=>x-y);
+  const management=Number(row.visitCycleMonths)===0?'무방문':`${row.visitCycleMonths}개월 방문`;
+  const label=typeLabels[t]||t||'고객유형 미선택';
+  const selectedMonthly=customerPrice(chosenFinalRate(row),t);
+  status.innerHTML=`<div class="mattress-status-top"><b>현재 선택된 계약조건</b><small>11월 원본 요금표 기준 · 프레임 별도</small></div>
+    <strong>${sizeLabel(row.size)} · ${management} · 의무 ${row.contractYears}년</strong>
+    <div class="mattress-status-bottom"><span>${label} 월 구독료 (반값 전)</span><b>${selectedMonthly!=null?fmt(selectedMonthly):'금액 미확인'}</b></div>`;
+  const cells=contractYears.map(year=>{
+    const rate=matching.find(r=>Number(r.contractYears)===year);
+    const actual=customerPrice(rate,t);
+    const normal=Number(rate?.sheetNormalPrice||0);
+    const selected=Number(row.contractYears)===year;
+    return `<button type="button" class="mattress-year-cell ${selected?'selected':''}" data-mattress-year="${year}" aria-pressed="${selected}" aria-label="${label} ${year}년 ${actual!=null?fmt(actual):'금액 미확인'} 선택">
+      <span class="mattress-year-name">${year}년${selected?' · 선택':''}</span>
+      <strong>${actual!=null?fmt(actual):'금액 미확인'}</strong>
+      ${normal>0?`<small>정상가 <s>${fmt(normal)}</s></small>`:''}
+    </button>`;
+  });
+  box.innerHTML=`<div class="mattress-compare-title"><b>${label} 월 구독료 (반값 전)</b><small>${sizeLabel(row.size)} · ${management} · 프레임 제외</small></div>
+    <div class="mattress-year-grid">${cells.join('')}</div>
+    <p>연도를 누르면 해당 약정으로 변경됩니다. 굵은 금액은 현재 고객유형별 월 구독료이며, 취소선은 정상가입니다. 6개월 반값 등 프로모션은 아래에서 별도 확인하세요.</p>`;
+  document.querySelectorAll('[data-mattress-year]').forEach(b=>b.onclick=()=>{
+    state.sel.contractYears=Number(b.dataset.mattressYear);
+    state.promoId=null; state.customerType='전체'; state.commissionType=null;
+    renderCalc();
+  });
+}
 function combinedMattressRate(row){
   const data=bundleMonthData(row);
   return {mattress:data.tariff,frame:data.frame,total:data.before};
@@ -397,6 +442,7 @@ function renderFrameAddon(row){
   document.querySelectorAll('[data-frame-id]').forEach(b=>b.onclick=()=>{
     const p=frameProducts().find(x=>x.apiId===Number(b.dataset.frameId));
     if(!p||!frameRateFor(p,selectedRow()))return;
+    if(state.frameProductId!==p.apiId)state.frameHalfOptOut=false;
     state.frameProductId=p.apiId;state.frameEnabled=true;
     renderFrameAddon(selectedRow()); updatePrice();
   });
@@ -476,6 +522,11 @@ function renderFinalRates(row){
 
 function preferredValue(key, vals){
   const orders={ management:['셀프형','방문형','라이트형'], contractYears:[6,5,7,3,4], visitCycleMonths:[12,6,4,2,0] };
+  // 기존 요금행의 배열 순서가 Q/K부터 시작해도 매트리스 상세 기본 사이즈는 SS로 통일합니다.
+  // 선택 이후 사용자가 지정한 사이즈·기간은 변경하지 않습니다.
+  if(key==='size' && state.product?.category==='매트리스'){
+    const ss=vals.find(v=>v==='SS');if(ss!==undefined)return ss;
+  }
   const pref=orders[key]||[];
   for(const x of pref){ if(vals.some(v=>String(v)===String(x))) return vals.find(v=>String(v)===String(x)); }
   return vals[0];
@@ -529,7 +580,7 @@ function selectedRow(){
   if(!rows.length) return null;
   return rows.find(r=>Object.entries(state.sel).every(([k,v])=>v===undefined||r[k]===v))||null;
 }
-function rowSummary(r){ if(!r) return ''; const a=[]; if(r.variant)a.push(r.variant); if(r.size)a.push(sizeLabel(r.size)); if(r.management)a.push(r.management); if(r.plan)a.push(String(r.plan).toUpperCase()); if(r.visitCycleMonths)a.push(`${r.visitCycleMonths}개월 주기`); if(r.contractYears)a.push(`의무 ${r.contractYears}년`); if(r.ownershipYears)a.push(`소유 ${r.ownershipYears}년`); return a.join(' · '); }
+function rowSummary(r){ if(!r) return ''; const a=[]; if(r.variant)a.push(r.variant); if(r.size)a.push(sizeLabel(r.size)); if(r.management)a.push(r.management); if(r.plan)a.push(String(r.plan).toUpperCase()); if(r.visitCycleMonths===0 && state.product?.category==='매트리스')a.push('무방문');else if(r.visitCycleMonths)a.push(`${r.visitCycleMonths}개월 주기`); if(r.contractYears)a.push(`의무 ${r.contractYears}년`); if(r.ownershipYears)a.push(`소유 ${r.ownershipYears}년`); return a.join(' · '); }
 function renderMembership(){
   const m=entry(state.product).memberships||[],w=$('#membershipBlock');
   if(!m.length){w.classList.add('hidden'); return;}
@@ -657,6 +708,7 @@ function updatePrice(){
   const sheetBase=state.month==='2026-11'?chosenFinalRate(r)?.sheetBasePrice:0;
   // 11월 매트리스/프레임의 '정상 구독료'는 첨부 엑셀 G열의 계약조건별 정상가입니다.
   // 제품 단위 공식몰 대표가로 덮어쓰면 사이즈/약정/방문주기마다 오표시됩니다.
+  renderMattressPriceComparison(r);
   const exactMattressNormal=state.month==='2026-11' && state.product?.category==='매트리스'
     ? Number(chosenFinalRate(r)?.sheetNormalPrice||0):0;
   const mainBase=exactMattressNormal||mall||sheetBase||0;
