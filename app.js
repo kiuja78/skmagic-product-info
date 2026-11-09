@@ -197,7 +197,7 @@ function setOfficialButton(btn,p,long=false){
   btn.title=url?(p?.model==='WRB-NAMUX'?'나무엑스 브랜드 공식 제품 상세페이지 열기':'공식몰 메뉴 없이 제품별 상세 웹기술서 열기'):'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
 }
 function openOfficial(id){
-  const p=products.find(x=>x.apiId===id);
+  const p=products.find(x=>String(x.apiId)===String(id));
   const url=officialDetailUrl(p);
   if(url&&(p?.model==='WRB-NAMUX'||p?.category==='나무엑스')){showNamuhxDetail(p,url);return;}
   if(url) window.open(url,'_blank','noopener,noreferrer');
@@ -206,33 +206,50 @@ function openOfficial(id){
 // 나무엑스 상세: 계산 흐름을 유지한 채 내부에서 원본을 표시합니다.
 // 외부 사이트가 프레임을 차단하는 경우 원본 링크와 제품사진을 제공합니다.
 function showNamuhxDetail(p,url){
+  // Show a dedicated product information layer rather than the cross-origin storefront.
+  // This prevents unrelated navigation and shopping menus from appearing.
   let layer=$('#namuhxDetailLayer');
-  if(!layer){
+  if(layer)layer.remove();
+  const photos=photoImages(p).filter(src=>/^https:\/\//i.test(src));
+  const image=photos[0]||'';
+  const cssId='namuhxViewerStyles';
+  if(!$('#'+cssId)){
     const css=document.createElement('style');
+    css.id=cssId;
     css.textContent=`
-      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(12,21,35,.8)}
-      #namuhxDetailLayer .nh-dialog{width:min(1080px,100%);height:min(92vh,940px);background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 70px #0005}
+      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(12,21,35,.82)}
+      #namuhxDetailLayer .nh-dialog{width:min(1050px,100%);height:min(92vh,940px);background:#fff;color:#253247;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 70px #0005}
       #namuhxDetailLayer .nh-top{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e6e9ef;flex-wrap:wrap}
       #namuhxDetailLayer .nh-actions{display:flex;gap:8px;align-items:center}
       #namuhxDetailLayer .nh-actions a,#namuhxDetailLayer .nh-actions button{padding:9px 14px;border-radius:9px;border:1px solid #c9d2e0;text-decoration:none;background:#f5f8ff;color:#18345c;font-weight:700;font-size:14px;cursor:pointer}
       #namuhxDetailLayer .nh-actions a{background:#183f89;color:#fff}
-      #namuhxDetailLayer iframe{width:100%;flex:1;border:0;background:#fff}
-      #namuhxDetailLayer .nh-hint{padding:9px 16px;font-size:12px;color:#617086;background:#f7f9fc}
+      #namuhxDetailLayer .nh-content{flex:1;overflow:auto;padding:clamp(20px,4vw,42px);text-align:center}
+      #namuhxDetailLayer .nh-content img{width:auto;max-width:100%;height:auto;max-height:650px;object-fit:contain}
+      #namuhxDetailLayer .nh-feature{padding:22px;margin:25px auto 0;max-width:690px;text-align:left;border-radius:14px;background:#f5f8fc;line-height:1.8}
+      #namuhxDetailLayer .nh-feature h3{margin:0 0 9px;font-size:19px}
+      #namuhxDetailLayer .nh-hint{padding:12px 16px;font-size:12px;line-height:1.6;color:#617086;background:#f7f9fc}
       @media(max-width:560px){#namuhxDetailLayer{padding:0}#namuhxDetailLayer .nh-dialog{height:100%;border-radius:0}}
     `;
     document.head.appendChild(css);
-    layer=document.createElement('div');
-    layer.id='namuhxDetailLayer';
-    layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 A1 상세페이지">
-      <div class="nh-top"><strong>나무엑스 A1 · 공식 상세페이지</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
-      <iframe title="나무엑스 A1 공식 제품상세" src="about:blank" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      <div class="nh-hint">공식 사이트에서 내부 표시를 제한할 경우 ‘원본 페이지 열기’를 이용해 주세요.</div>
-    </div>`;
-    document.body.appendChild(layer);
-    layer.querySelector('#nhClose').onclick=()=>{layer.remove();};
-    layer.addEventListener('click',e=>{if(e.target===layer)layer.remove();});
   }
-  layer.querySelector('iframe').src=url;
+  layer=document.createElement('div');
+  layer.id='namuhxDetailLayer';
+  const safeValue=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const features=quickFeatures(p).filter(Boolean).map(x=>'<li>'+safeValue(x)+'</li>').join('');
+  layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 A1 제품 상세">
+    <div class="nh-top"><strong>나무엑스 A1 · 제품 상세</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
+    <div class="nh-content">
+      <small style="font-weight:700;letter-spacing:.12em;color:#517a89">NAMUHX · WELLNESS ROBOTICS</small>
+      <h2 style="font-size:clamp(25px,4vw,36px);margin:14px 0 6px">나무엑스 A1</h2>
+      <p style="margin:0 0 25px;color:#67768b">공식 등록 제품 이미지 · ${safeValue(p.model)}</p>
+      ${image?'<img src="'+safeValue(image)+'" alt="나무엑스 A1 등록 제품 사진" referrerpolicy="no-referrer">':''}
+      <div class="nh-feature"><h3>제품 주요 특징</h3><ul>${features||'<li>AI 자율주행 공기청정 · 웰니스 로보틱스</li>'}</ul><p style="margin-bottom:0;font-size:13px;color:#617086">상세 기술 사양과 최신 서비스 조건은 나무엑스 원본 페이지에서 확인할 수 있습니다.</p></div>
+    </div>
+    <div class="nh-hint">공식 쇼핑몰의 메뉴 없이 제품 정보를 표시합니다. 보다 자세한 자료는 원본 페이지 열기를 이용해 주세요.</div>
+  </div>`;
+  document.body.appendChild(layer);
+  layer.querySelector('#nhClose').onclick=()=>layer.remove();
+  layer.addEventListener('click',e=>{if(e.target===layer)layer.remove()});
 }
 function closeSheet(){$('#sheet').classList.add('hidden');$('#backdrop').classList.add('hidden');document.body.style.overflow='';}
 $('#closeSheet').onclick=closeSheet; $('#backdrop').onclick=closeSheet; $('#officialBtn').onclick=()=>state.product&&openOfficial(state.product.apiId); $('#officialImageBtn').onclick=()=>state.product&&openPhotoViewer(state.product.apiId,true);
