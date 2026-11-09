@@ -164,7 +164,7 @@ function renderProducts(){
     </article>`;
   }).join(''):'<div class="cart-empty" style="grid-column:1/-1">조건에 맞는 제품이 없습니다.</div>';
   document.querySelectorAll('[data-photo]').forEach(b=>b.onclick=()=>openPhotoViewer(Number(b.dataset.photo)));
-  document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(Number(b.dataset.official)));
+  document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(b.dataset.official));
   document.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>openSheet(Number(b.dataset.calc)));
 }
 // 제품 상세는 공식몰 전체 화면보다 별도의 SK매직 e-카탈로그 웹기술서를 우선합니다.
