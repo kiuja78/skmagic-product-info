@@ -1,4 +1,4 @@
-name: Deploy SK Magic Product Info
+name: Deploy SK Magic Product Info (current source)
 
 on:
   push:
