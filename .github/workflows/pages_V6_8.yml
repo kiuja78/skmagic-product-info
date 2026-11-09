@@ -1,11 +1,7 @@
 name: Deploy SK Magic Product Info
 
+# Legacy V6.8 deploy kept for reference; newer pages.yml handles live updates.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site.zip'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
