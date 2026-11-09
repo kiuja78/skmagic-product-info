@@ -38,6 +38,37 @@ function loadMonth(month){
   priceDB=(snap.contractPrices||{}).products||{};
   finalRates=snap.finalRates||{};
   referencePolicy=snap.referencePolicy||{};
+  // 사용자 첨부 원본: 나무엑스 A1 프로모션 구독료 16개 조건.
+  if(state.month==='2026-11' && window.NAMUHX_RATES?.rows?.length){
+    let np=products.find(p=>p.category==='나무엑스'||/WRB-?NAMUX|WRBA1/i.test(p.model||''));
+    if(!np){
+      np={apiId:990017,title:'웰니스 로보틱스 나무엑스 A1',model:'WRBA1M10KRNG',
+        category:'나무엑스',spec:'AI 자율주행 공기청정 · 웰니스 로봇',
+        features:'AI 자율주행·이동 청정·라이브뷰·건강 체크',
+        cover:'https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_024.png',
+        galleryImages:[],prices:{}};
+      products=[...products,np];
+    }
+    const code=String(np.apiId);
+    const multipliers={'3':2.7,'5':4.5,'6':4.95,'7':5.4};
+    finalRates[code]=window.NAMUHX_RATES.rows.map(r=>{
+      const by={'신규단품':r.single,'크로스':r.cross,'패키지':r.package,
+        '재구독단품':r.renew,'재구독패키지':r.renewPackage,'타사보상':r.trade};
+      const fees={'신규':r.commissions.single,'크로스':r.commissions.cross,
+        '패키지':r.commissions.package,'재구독':r.commissions.renew,
+        '재구독패키지':r.commissions.renewPackage,'타사보상':r.commissions.trade};
+      return {variant:null,management:r.management,visitCycleMonths:r.visitCycleMonths,
+        contractYears:r.contractYears,ownershipYears:r.contractYears,
+        sheetBasePrice:r.base,pricesByCustomer:by,
+        sheetContractMultiplier:multipliers[String(r.contractYears)],
+        sheetProfitMultiplier:1,
+        sheetPayoutRates:{'신규':1,'크로스':.8,'패키지':.7,
+          '재구독':.7,'재구독패키지':.7,'타사보상':1},
+        sheetCommissionByCustomer:fees,
+        sourceSheet:'사용자 첨부 나무엑스 프로모션 구독료',
+        sourceNote:'적용기간은 원본 표에 미기재 · 계약 전 확인'};
+    });
+  }
   localStorage.setItem('sk_selected_month',state.month);
 }
 function subtype(p){
