@@ -179,6 +179,7 @@ const SHARED_OFFICIAL_DETAILS={
 };
 function officialDetailUrl(p){
   if(!p)return '';
+  if(p.model==='WRB-NAMUX'||p.category==='나무엑스')return 'https://www.namuhx.com/a1';
   const shared=SHARED_OFFICIAL_DETAILS[p.model];
   const sharedProduct=shared?products.find(x=>x.model===shared):null;
   const url=p.officialDetailUrl||sharedProduct?.officialDetailUrl||'';
@@ -198,8 +199,40 @@ function setOfficialButton(btn,p,long=false){
 function openOfficial(id){
   const p=products.find(x=>x.apiId===id);
   const url=officialDetailUrl(p);
+  if(url&&(p?.model==='WRB-NAMUX'||p?.category==='나무엑스')){showNamuhxDetail(p,url);return;}
   if(url) window.open(url,'_blank','noopener,noreferrer');
   else toast('이 모델의 공식 상세 웹기술서는 아직 등록되지 않았습니다.');
+}
+// 나무엑스 상세: 계산 흐름을 유지한 채 내부에서 원본을 표시합니다.
+// 외부 사이트가 프레임을 차단하는 경우 원본 링크와 제품사진을 제공합니다.
+function showNamuhxDetail(p,url){
+  let layer=$('#namuhxDetailLayer');
+  if(!layer){
+    const css=document.createElement('style');
+    css.textContent=`
+      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(12,21,35,.8)}
+      #namuhxDetailLayer .nh-dialog{width:min(1080px,100%);height:min(92vh,940px);background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 70px #0005}
+      #namuhxDetailLayer .nh-top{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e6e9ef;flex-wrap:wrap}
+      #namuhxDetailLayer .nh-actions{display:flex;gap:8px;align-items:center}
+      #namuhxDetailLayer .nh-actions a,#namuhxDetailLayer .nh-actions button{padding:9px 14px;border-radius:9px;border:1px solid #c9d2e0;text-decoration:none;background:#f5f8ff;color:#18345c;font-weight:700;font-size:14px;cursor:pointer}
+      #namuhxDetailLayer .nh-actions a{background:#183f89;color:#fff}
+      #namuhxDetailLayer iframe{width:100%;flex:1;border:0;background:#fff}
+      #namuhxDetailLayer .nh-hint{padding:9px 16px;font-size:12px;color:#617086;background:#f7f9fc}
+      @media(max-width:560px){#namuhxDetailLayer{padding:0}#namuhxDetailLayer .nh-dialog{height:100%;border-radius:0}}
+    `;
+    document.head.appendChild(css);
+    layer=document.createElement('div');
+    layer.id='namuhxDetailLayer';
+    layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 A1 상세페이지">
+      <div class="nh-top"><strong>나무엑스 A1 · 공식 상세페이지</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
+      <iframe title="나무엑스 A1 공식 제품상세" src="about:blank" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="nh-hint">공식 사이트에서 내부 표시를 제한할 경우 ‘원본 페이지 열기’를 이용해 주세요.</div>
+    </div>`;
+    document.body.appendChild(layer);
+    layer.querySelector('#nhClose').onclick=()=>{layer.remove();};
+    layer.addEventListener('click',e=>{if(e.target===layer)layer.remove();});
+  }
+  layer.querySelector('iframe').src=url;
 }
 function closeSheet(){$('#sheet').classList.add('hidden');$('#backdrop').classList.add('hidden');document.body.style.overflow='';}
 $('#closeSheet').onclick=closeSheet; $('#backdrop').onclick=closeSheet; $('#officialBtn').onclick=()=>state.product&&openOfficial(state.product.apiId); $('#officialImageBtn').onclick=()=>state.product&&openPhotoViewer(state.product.apiId,true);
