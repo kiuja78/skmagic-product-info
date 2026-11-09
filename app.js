@@ -237,46 +237,29 @@ function openOfficial(id){
 // 나무엑스 상세: 계산 흐름을 유지한 채 내부에서 원본을 표시합니다.
 // 외부 사이트가 프레임을 차단하는 경우 원본 링크와 제품사진을 제공합니다.
 function showNamuhxDetail(p,url){
-  // Show a dedicated product information layer rather than the cross-origin storefront.
-  // This prevents unrelated navigation and shopping menus from appearing.
   let layer=$('#namuhxDetailLayer');
   if(layer)layer.remove();
-  const photos=photoImages(p).filter(src=>/^https:\/\//i.test(src));
-  const image=photos[0]||'';
-  const cssId='namuhxViewerStyles';
-  if(!$('#'+cssId)){
-    const css=document.createElement('style');
-    css.id=cssId;
-    css.textContent=`
-      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(12,21,35,.82)}
-      #namuhxDetailLayer .nh-dialog{width:min(1050px,100%);height:min(92vh,940px);background:#fff;color:#253247;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 70px #0005}
-      #namuhxDetailLayer .nh-top{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e6e9ef;flex-wrap:wrap}
-      #namuhxDetailLayer .nh-actions{display:flex;gap:8px;align-items:center}
-      #namuhxDetailLayer .nh-actions a,#namuhxDetailLayer .nh-actions button{padding:9px 14px;border-radius:9px;border:1px solid #c9d2e0;text-decoration:none;background:#f5f8ff;color:#18345c;font-weight:700;font-size:14px;cursor:pointer}
-      #namuhxDetailLayer .nh-actions a{background:#183f89;color:#fff}
-      #namuhxDetailLayer .nh-content{flex:1;overflow:auto;padding:clamp(20px,4vw,42px);text-align:center}
-      #namuhxDetailLayer .nh-content img{width:auto;max-width:100%;height:auto;max-height:650px;object-fit:contain}
-      #namuhxDetailLayer .nh-feature{padding:22px;margin:25px auto 0;max-width:690px;text-align:left;border-radius:14px;background:#f5f8fc;line-height:1.8}
-      #namuhxDetailLayer .nh-feature h3{margin:0 0 9px;font-size:19px}
-      #namuhxDetailLayer .nh-hint{padding:12px 16px;font-size:12px;line-height:1.6;color:#617086;background:#f7f9fc}
+  if(!$('#namuhxModalStyle')){
+    const style=document.createElement('style');
+    style.id='namuhxModalStyle';
+    style.textContent=`
+      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;background:rgba(10,20,32,.84);padding:12px;display:grid;place-items:center}
+      #namuhxDetailLayer .nh-dialog{width:min(1060px,100%);height:min(94vh,950px);background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;color:#223346}
+      #namuhxDetailLayer .nh-top{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e0e7ed}
+      #namuhxDetailLayer .nh-actions{display:flex;align-items:center;gap:8px}
+      #namuhxDetailLayer .nh-actions a,#namuhxDetailLayer .nh-actions button{border:1px solid #cbd6df;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;text-decoration:none;background:#f2f5f8;color:#17364b;cursor:pointer}
+      #namuhxDetailLayer .nh-actions a{background:#144c63;color:#fff}
+      #namuhxDetailLayer .nh-content{flex:1;overflow:auto}
       @media(max-width:560px){#namuhxDetailLayer{padding:0}#namuhxDetailLayer .nh-dialog{height:100%;border-radius:0}}
     `;
-    document.head.appendChild(css);
+    document.head.appendChild(style);
   }
   layer=document.createElement('div');
   layer.id='namuhxDetailLayer';
-  const safeValue=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const features=quickFeatures(p).filter(Boolean).map(x=>'<li>'+safeValue(x)+'</li>').join('');
-  layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 A1 제품 상세">
-    <div class="nh-top"><strong>나무엑스 A1 · 제품 상세</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
-    <div class="nh-content">
-      <small style="font-weight:700;letter-spacing:.12em;color:#517a89">NAMUHX · WELLNESS ROBOTICS</small>
-      <h2 style="font-size:clamp(25px,4vw,36px);margin:14px 0 6px">나무엑스 A1</h2>
-      <p style="margin:0 0 25px;color:#67768b">공식 등록 제품 이미지 · ${safeValue(p.model)}</p>
-      ${image?'<img src="'+safeValue(image)+'" alt="나무엑스 A1 등록 제품 사진" referrerpolicy="no-referrer">':''}
-      <div class="nh-feature"><h3>제품 주요 특징</h3><ul>${features||'<li>AI 자율주행 공기청정 · 웰니스 로보틱스</li>'}</ul><p style="margin-bottom:0;font-size:13px;color:#617086">상세 기술 사양과 최신 서비스 조건은 나무엑스 원본 페이지에서 확인할 수 있습니다.</p></div>
-    </div>
-    <div class="nh-hint">공식 쇼핑몰의 메뉴 없이 제품 정보를 표시합니다. 보다 자세한 자료는 원본 페이지 열기를 이용해 주세요.</div>
+  const internal=window.NAMUHX_DETAIL?.render(p)||'<div style="padding:24px">나무엑스 제품 설명 자료를 불러오지 못했습니다. 원본 페이지를 이용하세요.</div>';
+  layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 제품 상세정보">
+    <div class="nh-top"><strong>나무엑스 A1 · 제품 상세정보</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
+    <div class="nh-content">${internal}</div>
   </div>`;
   document.body.appendChild(layer);
   layer.querySelector('#nhClose').onclick=()=>layer.remove();
