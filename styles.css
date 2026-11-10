@@ -439,3 +439,6 @@ button,input{font:inherit}.app{max-width:900px;margin:auto;padding:14px 18px 80p
 .sheet button.mattress-year-cell{font:inherit;cursor:pointer;appearance:none;color:inherit}
 .sheet button.mattress-year-cell:focus-visible{outline:3px solid #3283cc;outline-offset:2px}
 .mattress-card-price-notice{font-size:10px;color:#1e7364;margin-top:9px;padding:7px 8px;border-radius:9px;background:#ecf9f4;line-height:1.4;font-weight:800}
+
+/* 뉴슬림 제품 이미지 서버 장애 시 빈 카드 대신 안내 */
+.photo.photo-unavailable::before{content:'사진 연결 확인 중';position:absolute;inset:14px;display:grid;place-items:center;text-align:center;font-size:11px;line-height:1.4;font-weight:750;color:#64748b}

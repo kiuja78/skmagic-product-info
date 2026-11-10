@@ -38,37 +38,6 @@ function loadMonth(month){
   priceDB=(snap.contractPrices||{}).products||{};
   finalRates=snap.finalRates||{};
   referencePolicy=snap.referencePolicy||{};
-  // 사용자 첨부 원본: 나무엑스 A1 프로모션 구독료 16개 조건.
-  if(state.month==='2026-11' && window.NAMUHX_RATES?.rows?.length){
-    let np=products.find(p=>p.category==='나무엑스'||/WRB-?NAMUX|WRBA1/i.test(p.model||''));
-    if(!np){
-      np={apiId:990017,title:'웰니스 로보틱스 나무엑스 A1',model:'WRBA1M10KRNG',
-        category:'나무엑스',spec:'AI 자율주행 공기청정 · 웰니스 로봇',
-        features:'AI 자율주행·이동 청정·라이브뷰·건강 체크',
-        cover:'https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_024.png',
-        galleryImages:[],prices:{}};
-      products=[...products,np];
-    }
-    const code=String(np.apiId);
-    const multipliers={'3':2.7,'5':4.5,'6':4.95,'7':5.4};
-    finalRates[code]=window.NAMUHX_RATES.rows.map(r=>{
-      const by={'신규단품':r.single,'크로스':r.cross,'패키지':r.package,
-        '재구독단품':r.renew,'재구독패키지':r.renewPackage,'타사보상':r.trade};
-      const fees={'신규':r.commissions.single,'크로스':r.commissions.cross,
-        '패키지':r.commissions.package,'재구독':r.commissions.renew,
-        '재구독패키지':r.commissions.renewPackage,'타사보상':r.commissions.trade};
-      return {variant:null,management:r.management,visitCycleMonths:r.visitCycleMonths,
-        contractYears:r.contractYears,ownershipYears:r.contractYears,
-        sheetBasePrice:r.base,pricesByCustomer:by,
-        sheetContractMultiplier:multipliers[String(r.contractYears)],
-        sheetProfitMultiplier:1,
-        sheetPayoutRates:{'신규':1,'크로스':.8,'패키지':.7,
-          '재구독':.7,'재구독패키지':.7,'타사보상':1},
-        sheetCommissionByCustomer:fees,
-        sourceSheet:'사용자 첨부 나무엑스 프로모션 구독료',
-        sourceNote:'적용기간은 원본 표에 미기재 · 계약 전 확인'};
-    });
-  }
   localStorage.setItem('sk_selected_month',state.month);
 }
 function subtype(p){
@@ -132,6 +101,20 @@ function subFilters(c){
 function mattressSizes(p){return unique([...entry(p).rows.map(r=>r.size),...tariffRows(p).map(r=>r.size)]);}
 function sizeLabel(s){return s==='SS'?'슈퍼싱글(SS)':s==='Q'?'퀸(Q)':s==='K'?'킹(K)':s;}
 function photoImages(p){return unique([...(p.galleryImages||[]),p.cover].filter(Boolean));}
+function handleProductPhotoError(img){
+  const p=products.find(x=>String(x.apiId)===String(img.dataset.photoApi))||state.photo?.product||state.product;
+  if(!p){img.style.display='none';return;}
+  const alternatives=photoImages(p);
+  const tried=(img.dataset.triedSources||'').split('|').filter(Boolean);
+  const active=img.getAttribute('src')||'';
+  if(active&&!tried.includes(active))tried.push(active);
+  img.dataset.triedSources=tried.join('|');
+  const next=alternatives.find(u=>!tried.includes(u));
+  if(next){img.src=next;return;}
+  img.style.display='none';
+  img.closest('.photo')?.classList.add('photo-unavailable');
+}
+
 
 function renderCats(){
   $('#categoryChips').innerHTML=cats.map(c=>{
@@ -177,7 +160,7 @@ function renderProducts(){
     return `<article class="card">
       <div class="card-main">
         <button class="photo" data-photo="${p.apiId}" type="button">
-          <img src="${p.cover||''}" alt="${p.title}" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+          <img src="${p.cover||''}" data-photo-api="${p.apiId}" alt="${p.title}" referrerpolicy="no-referrer" onerror="handleProductPhotoError(this)">
           <span class="zoom-badge">확대</span>
         </button>
         <div>
@@ -195,7 +178,7 @@ function renderProducts(){
     </article>`;
   }).join(''):'<div class="cart-empty" style="grid-column:1/-1">조건에 맞는 제품이 없습니다.</div>';
   document.querySelectorAll('[data-photo]').forEach(b=>b.onclick=()=>openPhotoViewer(Number(b.dataset.photo)));
-  document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(b.dataset.official));
+  document.querySelectorAll('[data-official]').forEach(b=>b.onclick=()=>openOfficial(Number(b.dataset.official)));
   document.querySelectorAll('[data-calc]').forEach(b=>b.onclick=()=>openSheet(Number(b.dataset.calc)));
 }
 // 제품 상세는 공식몰 전체 화면보다 별도의 SK매직 e-카탈로그 웹기술서를 우선합니다.
@@ -210,7 +193,6 @@ const SHARED_OFFICIAL_DETAILS={
 };
 function officialDetailUrl(p){
   if(!p)return '';
-  if(p.model==='WRB-NAMUX'||p.category==='나무엑스')return 'https://www.namuhx.com/a1';
   const shared=SHARED_OFFICIAL_DETAILS[p.model];
   const sharedProduct=shared?products.find(x=>x.model===shared):null;
   const url=p.officialDetailUrl||sharedProduct?.officialDetailUrl||'';
@@ -228,42 +210,10 @@ function setOfficialButton(btn,p,long=false){
   btn.title=url?(p?.model==='WRB-NAMUX'?'나무엑스 브랜드 공식 제품 상세페이지 열기':'공식몰 메뉴 없이 제품별 상세 웹기술서 열기'):'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
 }
 function openOfficial(id){
-  const p=products.find(x=>String(x.apiId)===String(id));
+  const p=products.find(x=>x.apiId===id);
   const url=officialDetailUrl(p);
-  if(url&&(p?.model==='WRB-NAMUX'||p?.category==='나무엑스')){showNamuhxDetail(p,url);return;}
   if(url) window.open(url,'_blank','noopener,noreferrer');
   else toast('이 모델의 공식 상세 웹기술서는 아직 등록되지 않았습니다.');
-}
-// 나무엑스 상세: 계산 흐름을 유지한 채 내부에서 원본을 표시합니다.
-// 외부 사이트가 프레임을 차단하는 경우 원본 링크와 제품사진을 제공합니다.
-function showNamuhxDetail(p,url){
-  let layer=$('#namuhxDetailLayer');
-  if(layer)layer.remove();
-  if(!$('#namuhxModalStyle')){
-    const style=document.createElement('style');
-    style.id='namuhxModalStyle';
-    style.textContent=`
-      #namuhxDetailLayer{position:fixed;inset:0;z-index:99999;background:rgba(10,20,32,.84);padding:12px;display:grid;place-items:center}
-      #namuhxDetailLayer .nh-dialog{width:min(1060px,100%);height:min(94vh,950px);background:#fff;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;color:#223346}
-      #namuhxDetailLayer .nh-top{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e0e7ed}
-      #namuhxDetailLayer .nh-actions{display:flex;align-items:center;gap:8px}
-      #namuhxDetailLayer .nh-actions a,#namuhxDetailLayer .nh-actions button{border:1px solid #cbd6df;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;text-decoration:none;background:#f2f5f8;color:#17364b;cursor:pointer}
-      #namuhxDetailLayer .nh-actions a{background:#144c63;color:#fff}
-      #namuhxDetailLayer .nh-content{flex:1;overflow:auto}
-      @media(max-width:560px){#namuhxDetailLayer{padding:0}#namuhxDetailLayer .nh-dialog{height:100%;border-radius:0}}
-    `;
-    document.head.appendChild(style);
-  }
-  layer=document.createElement('div');
-  layer.id='namuhxDetailLayer';
-  const internal=window.NAMUHX_DETAIL?.render(p)||'<div style="padding:24px">나무엑스 제품 설명 자료를 불러오지 못했습니다. 원본 페이지를 이용하세요.</div>';
-  layer.innerHTML=`<div class="nh-dialog" role="dialog" aria-modal="true" aria-label="나무엑스 제품 상세정보">
-    <div class="nh-top"><strong>나무엑스 A1 · 제품 상세정보</strong><div class="nh-actions"><a href="https://www.namuhx.com/a1" target="_blank" rel="noopener noreferrer">원본 페이지 열기 ↗</a><button type="button" id="nhClose">닫기 ×</button></div></div>
-    <div class="nh-content">${internal}</div>
-  </div>`;
-  document.body.appendChild(layer);
-  layer.querySelector('#nhClose').onclick=()=>layer.remove();
-  layer.addEventListener('click',e=>{if(e.target===layer)layer.remove()});
 }
 function closeSheet(){$('#sheet').classList.add('hidden');$('#backdrop').classList.add('hidden');document.body.style.overflow='';}
 $('#closeSheet').onclick=closeSheet; $('#backdrop').onclick=closeSheet; $('#officialBtn').onclick=()=>state.product&&openOfficial(state.product.apiId); $('#officialImageBtn').onclick=()=>state.product&&openPhotoViewer(state.product.apiId,true);
@@ -284,7 +234,7 @@ function renderPhotoViewer(){
   const url=images[index]||product?.cover||'';
   $('#photoViewerImage').src=url;
   $('#photoViewerImage').alt=product?.title||'제품 사진';
-  $('#photoViewerImage').onerror=()=>{ if(product?.cover && $('#photoViewerImage').src!==product.cover) $('#photoViewerImage').src=product.cover; };
+  $('#photoViewerImage').dataset.photoApi=String(product?.apiId||'');$('#photoViewerImage').dataset.triedSources='';$('#photoViewerImage').style.display='';$('#photoViewerImage').onerror=()=>handleProductPhotoError($('#photoViewerImage'));
   $('#photoViewerThumbs').innerHTML=images.map((src,i)=>`<button type="button" class="${i===index?'active':''}" data-photo-index="${i}"><img src="${src}" alt="썸네일 ${i+1}" referrerpolicy="no-referrer" onerror="this.parentElement.remove()"></button>`).join('');
   document.querySelectorAll('[data-photo-index]').forEach(b=>b.onclick=()=>{state.photo.index=Number(b.dataset.photoIndex); renderPhotoViewer();});
   setOfficialButton($('#photoViewerOfficial'),product,true);
@@ -761,7 +711,7 @@ function renderPromos(row){
 
 function renderCalc(){
   const p=state.product;
-  $('#selCategory').textContent=p.category; $('#selSubtype').textContent=subtype(p); $('#selTitle').textContent=p.title; $('#selModel').textContent=p.model; $('#selImage').src=p.cover||'';
+  $('#selCategory').textContent=p.category; $('#selSubtype').textContent=subtype(p); $('#selTitle').textContent=p.title; $('#selModel').textContent=p.model; $('#selImage').dataset.photoApi=String(p.apiId);$('#selImage').dataset.triedSources='';$('#selImage').style.display='';$('#selImage').onerror=()=>handleProductPhotoError($('#selImage'));$('#selImage').src=p.cover||'';
   setOfficialButton($('#officialBtn'),p,true);
   $('#quickFeatures').innerHTML=quickFeatures(p).map(x=>`<span class="feature">${x}</span>`).join('');
   renderSelectors(); const r=selectedRow(); renderFinalRates(r); renderPromos(r); renderMembership(); renderFrameAddon(r); updatePrice();
@@ -775,8 +725,9 @@ function updatePrice(){
   renderMattressPriceComparison(r);
   const exactMattressNormal=state.month==='2026-11' && state.product?.category==='매트리스'
     ? Number(chosenFinalRate(r)?.sheetNormalPrice||0):0;
-  const mainBase=exactMattressNormal||mall||sheetBase||0;
-  $('#officialPriceLabel').textContent=exactMattressNormal?'정상 구독료 · 11월 매트리스 원본':mall?'기본구독료 · SK매직몰 참고':sheetBase?'기준구독료 · 11월 요금표':'기본구독료 · SK매직몰 미확인';
+  const isNovSlim=state.month==='2026-11' && ['WPU-TDC104','WPU-TDF104','WPU-TDC114','WPU-TDF114'].includes(state.product?.model);
+  const mainBase=isNovSlim?Number(sheetBase||0):(exactMattressNormal||mall||sheetBase||0);
+  $('#officialPriceLabel').textContent=isNovSlim?'계약별 기준구독료 · 11월 원본':exactMattressNormal?'정상 구독료 · 11월 매트리스 원본':mall?'기본구독료 · SK매직몰 참고':sheetBase?'기준구독료 · 11월 요금표':'기본구독료 · SK매직몰 미확인';
   $('#officialPrice').textContent=mainBase?fmt(mainBase):'-';
   $('#officialPrice').classList.toggle('base-price-strike',!!mainBase);
   $('#officialSummary').textContent=exactMattressNormal&&sheetBase?`기준구독료 ${fmt(sheetBase)} · 고객유형별 금액은 아래에서 선택`:'';
