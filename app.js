@@ -42,7 +42,7 @@ function loadMonth(month){
 }
 function subtype(p){
   const t=`${p.title||''} ${p.spec||''} ${p.features||''}`;
-  if(p.category==='정수기'){if(t.includes('얼음물'))return'얼음물';if(t.includes('얼음정수기')||p.model==='WPU-IC110F')return'얼음';if(t.includes('초소형'))return'초소형';if(t.includes('직수'))return'직수형';if(t.includes('스탠드')||t.includes('그랜드'))return'스탠드형';return'일반형'}
+  if(p.category==='정수기'){if(t.includes('얼음물')||t.includes('얼음정수기')||p.model==='WPU-IC110F')return'얼음';if(t.includes('초소형'))return'초소형';if(t.includes('직수'))return'직수형';if(t.includes('스탠드')||t.includes('그랜드'))return'스탠드형';return'일반형'}
   if(p.category==='공기청정기'){if(t.includes('올클린 디 아트'))return'올클린 디 아트';if(t.includes('올클린'))return'올클린';if(t.includes('코어'))return'코어';if(t.includes('슈퍼'))return'슈퍼';return'기타'}
   if(p.category==='비데'){if(t.includes('올클린'))return'올클린 케어';if(t.includes('풀스텐 케어'))return'풀스텐 케어';if(t.includes('스파'))return'스파';if(t.includes('파워업'))return'파워업';return'기타'}
   if(p.category==='매트리스')return p.title.includes('매트리스')?'매트리스':'프레임';
@@ -92,10 +92,9 @@ function priceRange(p){
 }
 function subFilters(c){
   if(c==='프로모션')return['전체','정수기','공기청정기','비데','매트리스'];
-  if(c==='정수기')return['전체','직수형','초소형','얼음','얼음물','스탠드형','일반형'];
+  if(c==='정수기')return['전체','직수형','초소형','얼음','스탠드형','일반형'];
   if(c==='공기청정기')return['전체','올클린 디 아트','올클린','코어','슈퍼','기타'];
   if(c==='비데')return['전체','올클린 케어','풀스텐 케어','스파','파워업','기타'];
-  if(c==='매트리스')return['전체','SS','Q','K'];
   return[];
 }
 function mattressSizes(p){return unique([...entry(p).rows.map(r=>r.size),...tariffRows(p).map(r=>r.size)]);}
@@ -129,11 +128,11 @@ function renderCats(){
 }
 function renderSub(){
   const a=subFilters(state.category),w=$('#subFilter');
-  if(!a.length){w.classList.add('hidden');return}
+  if(!a.length){state.sub='전체';w.classList.add('hidden');return}
   w.classList.remove('hidden');
-  $('#subTitle').textContent=state.category==='프로모션'?'프로모션 제품군':state.category==='매트리스'?'사이즈':'세부구분';
+  $('#subTitle').textContent=state.category==='프로모션'?'프로모션 제품군':'세부구분';
   $('#subHelp').textContent=state.category==='프로모션'?'제품군별로 보기':'';
-  $('#subChips').innerHTML=a.map(x=>`<button class="sub-chip ${state.sub===x?'active':''}" data-sub="${x}">${state.category==='매트리스'&&x!=='전체'?sizeLabel(x):x}</button>`).join('');
+  $('#subChips').innerHTML=a.map(x=>`<button class="sub-chip ${state.sub===x?'active':''}" data-sub="${x}">${x}</button>`).join('');
   document.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{state.sub=b.dataset.sub;renderSub();renderProducts()});
 }
 function filtered(){
@@ -145,8 +144,7 @@ function filtered(){
     }else{
       if(state.category!=='전체'&&p.category!==state.category)return false;
       if(state.sub!=='전체'){
-        if(state.category==='매트리스'){if(!mattressSizes(p).includes(state.sub))return false}
-        else if(subtype(p)!==state.sub)return false;
+        if(subtype(p)!==state.sub)return false;
       }
     }
     return !q||`${p.title} ${p.model} ${p.spec||''} ${p.features||''}`.toLowerCase().includes(q);
@@ -196,18 +194,20 @@ function officialDetailUrl(p){
   const shared=SHARED_OFFICIAL_DETAILS[p.model];
   const sharedProduct=shared?products.find(x=>x.model===shared):null;
   const url=p.officialDetailUrl||sharedProduct?.officialDetailUrl||'';
-  // 공식 SK매직 웹기술서만 허용합니다. 나무엑스는 브랜드 공식몰의 특정 A1 제품 상세 링크만 예외적으로 허용합니다.
-  if(p.model==='WRB-NAMUX' && url==='https://www.namuhx.com/goods/goods_view_plan.php?goodsNo=1000000017') return url;
+  // 나무엑스는 공식 쇼핑몰 전체(메뉴/가격/구매 기능)를 열지 않고,
+  // 공식 자료와 원본 제품사진을 사용하는 사이트 내부 상세 콘텐츠만 표시합니다.
+  // GitHub Pages 프로젝트 하위 경로에서도 정상 열리도록 상대경로 사용.
+  if(p.model==='WRB-NAMUX') return './namuhx-a1-detail.html';
   return /^https:\/\/ebookimage\.skmagic\.com\/images\/.+\.html(?:[?#].*)?$/i.test(url)?url:'';
 }
 function officialButtonText(p,long=false){
-  return officialDetailUrl(p)?(p?.model==='WRB-NAMUX'?(long?'나무엑스 공식 제품상세 ↗':'공식 상세'):(long?'SK매직 공식 제품상세 ↗':'공식 상세')):'상세자료 미등록';
+  return officialDetailUrl(p)?(p?.model==='WRB-NAMUX'?(long?'나무엑스 A1 제품상세 ↗':'제품 상세'):(long?'SK매직 공식 제품상세 ↗':'공식 상세')):'상세자료 미등록';
 }
 function setOfficialButton(btn,p,long=false){
   const url=officialDetailUrl(p);
   btn.disabled=!url;
   btn.textContent=officialButtonText(p,long);
-  btn.title=url?(p?.model==='WRB-NAMUX'?'나무엑스 브랜드 공식 제품 상세페이지 열기':'공식몰 메뉴 없이 제품별 상세 웹기술서 열기'):'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
+  btn.title=url?(p?.model==='WRB-NAMUX'?'나무엑스 제품 상세 콘텐츠만 새 창에서 열기':'공식몰 메뉴 없이 제품별 상세 웹기술서 열기'):'제품별 공식 웹기술서 링크가 확인되지 않았습니다';
 }
 function openOfficial(id){
   const p=products.find(x=>x.apiId===id);

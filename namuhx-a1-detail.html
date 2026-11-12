@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#070e13">
+  <meta name="description" content="나무엑스 A1 웰니스 로봇 제품 상세 소개. 에어솔루션, 자율주행, 헬스케어, 보안, 제품 사양.">
+  <title>나무엑스 A1 | 제품 상세</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#f5f8f7;background:#070d12;font-synthesis:none}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0}h1,h2,h3,p{margin-top:0}p{line-height:1.8}
+    .wrap{width:min(100%,1080px);margin:auto}.eyebrow{display:block;color:#82e8d4;font-size:12px;letter-spacing:.2em;font-weight:800;text-transform:uppercase;margin-bottom:16px}
+    .hero{background:linear-gradient(145deg,#141a21,#05080b);position:relative;overflow:hidden}
+    .hero-grid{min-height:625px;display:grid;grid-template-columns:1fr .9fr;align-items:center;gap:30px;padding:80px 34px 55px}
+    .hero-text{position:relative;z-index:1}.hero h1{font-size:clamp(46px,7vw,82px);letter-spacing:-.065em;line-height:1.1;margin:0 0 24px;font-weight:800}.hero h1 span{color:#93e3d7}
+    .hero .lead{color:#dce6e5;max-width:440px;font-size:clamp(17px,2vw,21px);line-height:1.75}.model{margin-top:28px;color:#9babae;font-size:12px;letter-spacing:.04em}
+    .hero-art{position:relative;display:flex;align-items:center;justify-content:center;min-height:470px}
+    .hero-art:before{content:"";position:absolute;border-radius:50%;width:min(75%,480px);aspect-ratio:1;background:radial-gradient(circle,#407f79b8,#162d3600 68%);filter:blur(26px)}
+    .hero-art img{position:relative;max-width:100%;height:auto;max-height:500px;object-fit:contain;filter:drop-shadow(5px 24px 26px #0008)}
+    .disclaimer{font-size:12px;color:#8b9699;line-height:1.7}
+    .intro{padding:84px 28px 70px;text-align:center}.intro h2{font-size:clamp(30px,4.5vw,49px);letter-spacing:-.055em;line-height:1.3;margin-bottom:20px}.intro p{color:#b4c1c4;font-size:17px;max-width:720px;margin:0 auto}
+    .feature-band{background:#10191d;padding:45px 24px}.feature-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.feature{padding:25px 20px;border:1px solid #354248;border-radius:20px;background:#192429}
+    .feature .num{color:#73d8c9;font-size:12px;letter-spacing:.1em;font-weight:800}.feature h3{font-size:19px;letter-spacing:-.04em;margin:13px 0 10px}.feature p{font-size:14px;color:#afbec2;margin:0;line-height:1.65}
+    .section{padding:90px 30px}.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:54px;align-items:center}.section h2{font-size:clamp(31px,4.2vw,52px);letter-spacing:-.055em;line-height:1.32;margin-bottom:24px}.section p{color:#bdcbcc;font-size:16px}.section .facts{padding:0;margin:24px 0 0;list-style:none}
+    .section .facts li{display:flex;gap:12px;align-items:start;padding:13px 0;border-top:1px solid #2a393d;color:#dce5e7;line-height:1.6;font-size:15px}.section .facts li:before{content:'✓';color:#86e1d3;font-weight:900}
+    .media{min-height:360px;border-radius:28px;background:radial-gradient(circle at 60% 35%,#314b50,#121d22 58%,#0b1318);display:flex;justify-content:center;align-items:center;overflow:hidden;padding:25px}
+    .media img{max-width:100%;width:100%;height:auto;max-height:550px;object-fit:contain;border-radius:12px}
+    .media.picture{padding:0}.media.picture img{max-height:none}
+    .reverse .media{order:-1}.light{background:#eaf2f1;color:#17252b}.light h2{color:#17252b}.light p{color:#41545a}.light .facts li{color:#344d51;border-top-color:#c6d5d5}.light .facts li:before{color:#218478}
+    .care-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:30px}
+    .care-card{background:#1a262b;border:1px solid #334247;border-radius:24px;padding:28px;min-height:220px}
+    .care-card h3{font-size:22px;letter-spacing:-.04em;margin:0 0 14px}.care-card p{font-size:14px;color:#b9c9cc;margin:0}
+    .gallery{background:#0d1519;padding:75px 24px}.gallery h2{text-align:center;font-size:clamp(28px,4vw,41px);letter-spacing:-.05em;margin-bottom:32px}.gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.photo-tile{border-radius:19px;padding:25px;background:#171f23;display:flex;align-items:center;justify-content:center;aspect-ratio:1}.photo-tile img{max-width:100%;max-height:100%;object-fit:contain}
+    .specs{padding:80px 25px;background:#f8fbfb;color:#1d2b32}.specs h2{font-size:clamp(28px,4vw,43px);letter-spacing:-.055em;margin-bottom:25px}.specs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:2px solid #182e33}
+    .spec{display:flex;gap:15px;padding:19px 10px;border-bottom:1px solid #d9e2e4}.spec:nth-child(odd){border-right:1px solid #d9e2e4}.spec dt{flex:0 0 125px;color:#647980;font-size:14px}.spec dd{margin:0;font-size:15px;font-weight:650;line-height:1.5}
+    .spec-note{font-size:13px;color:#657a81;margin:22px 0 0}.end{padding:34px 28px 50px;background:#0a1115;text-align:center;font-size:12px;color:#82969a;line-height:1.8}.end strong{font-size:18px;color:#d4e5e4;letter-spacing:.11em}
+    .img-fail{display:none;color:#c2d0ce;font-size:13px;padding:20px;text-align:center}.media img[src=""]{display:none}
+    @media(max-width:720px){
+      .hero-grid{padding:49px 24px 42px;grid-template-columns:1fr;gap:0;min-height:0}.hero h1{font-size:52px}.hero-art{min-height:0;height:365px}.hero-art img{max-height:350px}.intro{padding:62px 24px}.intro p{font-size:15px}
+      .feature-band{padding:26px 16px}.feature-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.feature{padding:21px 16px}.feature h3{font-size:16px}.feature p{font-size:12px}
+      .care-grid{grid-template-columns:1fr;gap:12px}.care-card{min-height:0;padding:23px}.care-card h3{font-size:19px}
+      .section{padding:64px 20px}.section-grid{grid-template-columns:1fr;gap:28px}.section h2{font-size:33px;margin-bottom:16px}.section p{font-size:15px}.reverse .media{order:0}.media{min-height:270px;border-radius:20px}.gallery{padding:55px 15px}.gallery-grid{gap:8px}.photo-tile{padding:8px;border-radius:12px}.specs{padding:57px 20px}.specs-grid{grid-template-columns:1fr}.spec{border-right:0!important}.spec dt{flex-basis:105px}.spec dd{font-size:14px}
+    }
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <!-- 나무엑스 공식몰 메뉴/주문·구독 UI 없이 제품 내용만 보여주는 독립 문서. -->
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-text">
+          <span class="eyebrow">Wellness Robotics · Product Detail</span>
+          <h1>NAMUH<span>ˣ</span><br>A1</h1>
+          <p class="lead">공기를 관리하고, 공간을 살피고, 일상의 케어를 함께하는 <b>움직이는 웰니스 로봇</b></p>
+          <div class="model">나무엑스 A1 · WRBA1M10KRNG / WRBA1M10KRDW</div>
+        </div>
+        <div class="hero-art"><img src="https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_110.png" alt="나무엑스 A1 제품 원본 사진" referrerpolicy="no-referrer" decoding="async" fetchpriority="high"></div>
+      </div>
+    </section>
+
+    <section class="wrap intro">
+      <span class="eyebrow">The Beginning of Wellness</span>
+      <h2>정해진 자리에서 벗어나<br>필요한 곳으로 직접 찾아갑니다.</h2>
+      <p>나무엑스 A1은 AI 자율주행과 공기청정을 결합한 웰니스 로봇입니다. 집 안의 공기 상태를 살피고 필요한 공간으로 이동하며, 음성 대화와 다양한 생활 케어 기능을 제공합니다.</p>
+    </section>
+
+    <section class="feature-band">
+      <div class="wrap feature-list">
+        <article class="feature"><span class="num">01 · AIR</span><h3>이동형 공기청정</h3><p>공기 오염을 감지하고 필요한 장소로 이동해 청정</p></article>
+        <article class="feature"><span class="num">02 · DRIVE</span><h3>스마트 자율주행</h3><p>주변 사물과 장애물을 인식하고 경로를 탐색</p></article>
+        <article class="feature"><span class="num">03 · WELLNESS</span><h3>바이탈 사인 체크</h3><p>비접촉 방식의 건강 지표 확인을 지원</p></article>
+        <article class="feature"><span class="num">04 · AI CARE</span><h3>음성 · 생활 케어</h3><p>음성 대화, 웨이크업·웰컴 등 일상 지원</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap section-grid">
+        <div>
+          <span class="eyebrow">Air Solution</span>
+          <h2>오염을 알아채고,<br>직접 찾아가는 공기청정</h2>
+          <p>고정된 한 장소가 아니라 공간을 이동하면서 공기를 관리합니다. 공기 상태를 감지해 필요한 공간을 청정하고, 작업 후 스테이션으로 복귀하는 방식입니다.</p>
+          <ul class="facts">
+            <li>공기질 감지부터 자율 이동·청정·복귀까지 연계</li>
+            <li>미세먼지와 가스 등 실내 공기 상태 관리</li>
+            <li>올인원 필터 및 UV 케어 시스템 적용</li>
+          </ul>
+        </div>
+        <div class="media"><img src="https://skmagicnamuh4.cdn-nhncommerce.com/data/skin/front/no101/img/goods/pod/a1_01.png" alt="나무엑스 공식 원본 A1 제품 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>
+      </div>
+    </section>
+
+    <section class="section light reverse">
+      <div class="wrap section-grid">
+        <div>
+          <span class="eyebrow" style="color:#187c71">Smart Navigation</span>
+          <h2>공간을 이해하며<br>부드럽게 이동합니다.</h2>
+          <p>주변 사물과 장애물을 감지하고, 집 안 동선을 고려해 움직이는 AI 자율주행 기술을 적용했습니다.</p>
+          <ul class="facts">
+            <li>비전 AI 기반 주변 환경 및 장애물 인식</li>
+            <li>스마트 경로 탐색·이동과 스테이션 복귀</li>
+            <li>이동청정·고정청정 등 상황별 청정 운용</li>
+          </ul>
+        </div>
+        <div class="media"><img src="https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_52.png" alt="나무엑스 A1 공식 제품 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap section-grid">
+        <div>
+          <span class="eyebrow">AI Companion</span>
+          <h2>목소리로 소통하는<br>AI 웰니스 파트너</h2>
+          <p>직접 화면을 조작하지 않아도 음성으로 제품 기능을 제어할 수 있습니다. 대화형 AI 및 웰컴·웨이크업·릴랙스와 같은 생활 케어를 지원합니다.</p>
+          <ul class="facts">
+            <li>음성 제어 및 AI 기반 대화 기능</li>
+            <li>비접촉 바이탈 사인 체크 기능</li>
+            <li>개인 생활 패턴에 맞춘 웰니스 케어</li>
+          </ul>
+        </div>
+        <div class="media picture"><img src="https://skmagicnamuh4.cdn-nhncommerce.com/data/skin/front/no101/img/goods/pod/a1_16.png" alt="나무엑스 공식 AI 음성 대화 기능 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>
+      </div>
+    </section>
+
+    <section class="section light reverse">
+      <div class="wrap section-grid">
+        <div>
+          <span class="eyebrow" style="color:#187c71">Privacy &amp; Safety</span>
+          <h2>편리함에 더한<br>안전과 개인정보 보호</h2>
+          <p>공간의 이상 상황을 감지하는 세이프 케어와 개인정보 보호를 위한 온디바이스 처리 등 보안 기능을 제공합니다.</p>
+          <ul class="facts">
+            <li>주행과 공간 케어를 위한 센서·인식 기능</li>
+            <li>정보보호를 고려한 데이터 처리·암호화 설계</li>
+            <li>세이프 케어 기능은 이용 조건에 따라 제공</li>
+          </ul>
+        </div>
+        <div class="media picture"><img src="https://skmagicnamuh4.cdn-nhncommerce.com/data/skin/front/no101/img/goods/pod/a1_17.png" alt="나무엑스 공식 보안 기능 설명 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>
+      </div>
+    </section>
+
+    <section class="section" style="background:#101b20">
+      <div class="wrap">
+        <span class="eyebrow">More Smart Care</span>
+        <h2>공기청정을 넘어,<br>생활까지 함께 살피는 A1</h2>
+        <div class="care-grid">
+          <article class="care-card"><span class="eyebrow">Safe Care</span><h3>공간 순찰 · 알림</h3><p>이상 움직임 감지와 공간 모니터링 등 보안 관련 케어를 제공합니다. 라이브 뷰 및 출동 연계 서비스는 별도 서비스 제공 조건에 따릅니다.</p></article>
+          <article class="care-card"><span class="eyebrow">Vital Sign</span><h3>비접촉 건강 지표 확인</h3><p>비접촉 방식으로 건강 관련 지표를 확인하며, 마이 헬스케어를 통해 일상 관리에 활용할 수 있습니다. 의료 목적의 진단 기기는 아닙니다.</p></article>
+          <article class="care-card"><span class="eyebrow">Follow Me &amp; AI</span><h3>음성으로 부르는 로봇</h3><p>음성 안내에 따라 사용자를 따라오는 팔로우미 기능과 웰컴·웨이크업·릴랙스 같은 생활 케어 기능을 지원합니다.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery">
+      <div class="wrap">
+        <span class="eyebrow" style="text-align:center">Original Product Images</span>
+        <h2>나무엑스 A1 제품 이미지</h2>
+        <div class="gallery-grid">
+          <div class="photo-tile"><img src="https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_024.png" alt="나무엑스 A1 공식 제품 이미지 1" loading="lazy" referrerpolicy="no-referrer"></div>
+          <div class="photo-tile"><img src="https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_27.png" alt="나무엑스 A1 공식 제품 이미지 2" loading="lazy" referrerpolicy="no-referrer"></div>
+          <div class="photo-tile"><img src="https://godomall-storage.cdn-nhncommerce.com/666491d955848ac771719e187e418aef/goods/1000000017/image/detail/1000000017_detail_52.png" alt="나무엑스 A1 공식 제품 이미지 3" loading="lazy" referrerpolicy="no-referrer"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="specs">
+      <div class="wrap">
+        <span class="eyebrow" style="color:#267b75">Product Specifications</span>
+        <h2>제품 사양</h2>
+        <dl class="specs-grid">
+          <div class="spec"><dt>제품명</dt><dd>나무엑스 A1 웰니스 로봇</dd></div>
+          <div class="spec"><dt>제품코드</dt><dd>WRBA1M10KRNG / WRBA1M10KRDW</dd></div>
+          <div class="spec"><dt>색상</dt><dd>Night Gray / Dawn White</dd></div>
+          <div class="spec"><dt>제품 크기</dt><dd>376 × 376 × 650~753 mm</dd></div>
+          <div class="spec"><dt>제품 무게</dt><dd>14 kg</dd></div>
+          <div class="spec"><dt>표준 사용면적</dt><dd>66.0㎡ (20평형)</dd></div>
+          <div class="spec"><dt>정격 소비전력</dt><dd>156 W</dd></div>
+          <div class="spec"><dt>배터리 / 충전</dt><dd>18.2V · 9.4Ah / 급속 약 150분, 완속 약 240분</dd></div>
+        </dl>
+        <p class="spec-note">※ 공식 공개 제품정보 기준입니다. 사양·기능·서비스 제공 조건은 제조사 정책과 업데이트에 따라 달라질 수 있습니다. 바이탈 사인 체크는 의료 진단을 대체하지 않습니다.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="end"><strong>NAMUHˣ A1</strong><p style="margin:15px auto 0;max-width:640px">나무엑스 공식 제품 정보를 바탕으로 정리한 상세 안내 페이지입니다.<br>원본 제품 이미지는 브랜드 공식 이미지 서버에서 표시합니다.<br>상품 구매·구독료·상담 접수 등 공식몰 기능은 포함하지 않습니다.</p></footer>
+  <script>
+    // 외부 공식 이미지 CDN 장애 시 잘못된 대체 제품을 보여주지 않고 안내만 표시.
+    document.querySelectorAll('img').forEach(img=>{
+      const fail=()=>{
+        if(img.dataset.failed==='1')return;
+        img.dataset.failed='1';
+        img.style.display='none';
+        const note=document.createElement('span');
+        note.className='img-fail';note.style.display='block';
+        note.textContent='원본 제품 이미지를 불러올 수 없습니다. 네트워크 연결을 확인해 주세요.';
+        img.insertAdjacentElement('afterend',note);
+      };
+      img.addEventListener('error',fail,{once:true});
+      if(img.complete && !img.naturalWidth)fail();
+    });
+  </script>
+</body>
+</html>
